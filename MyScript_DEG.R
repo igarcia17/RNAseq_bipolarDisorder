@@ -70,7 +70,7 @@ dds <- nbinomWaldTest(dds, maxit = 10000)
 dds_normalized <- counts(dds, normalized=TRUE)
 
 #save file with normalized counts: will be used for WGCNA
-write.table (dds_normalized, file="MyResults/counts_normalized.tsv", quote=FALSE, 
+write.table (dds_normalized, file="MyResults_DEG/counts_normalized.tsv", quote=FALSE, 
              sep = "\t", col.names=NA)
 
 #PCA: blind must be FALSE to take into account batch effect
@@ -81,7 +81,7 @@ mat <- limma::removeBatchEffect(mat,
                                 batch=vst$PED, batch2=vst$gender,
                                 batch3=vst$age, design=mm)
 assay(vst) <- mat
-tiff(filename = "MyResults/PCA.tiff", units="in", width=5, 
+tiff(filename = "MyResults_DEG/PCA.tiff", units="in", width=5, 
      height=5, res=300)
 pca <- plotPCA(vst)
 pca + ggtitle("Principal Components Plot") + geom_text_repel(aes
@@ -89,13 +89,12 @@ pca + ggtitle("Principal Components Plot") + geom_text_repel(aes
                                                              size=1)
 invisible(dev.off())
 
-
 #Distances between samples
 distRL <- dist(t(mat))
 distMat <- as.matrix(distRL)
 hc <- hclust(distRL)
 hmcol <- colorRampPalette(c("white", "blue"))(299)
-tiff(filename = "MyResults/distances.tiff", units="in", width=5, height=5, res=200)
+tiff(filename = "MyResults_DEG/distances.tiff", units="in", width=5, height=5, res=200)
 heatmap.2(distMat, Rowv=as.dendrogram(hc), symm=TRUE, trace="none", col=rev(hmcol),
           margin=c(10, 6), main="Distances matrix", key.title=NA)
 invisible(dev.off())
@@ -105,7 +104,7 @@ rm(distMat)
 rm(distRL)
 
 #Dispersion plot
-tiff(filename = "MyResults/dispersion.tiff", units="in", width=5, height=5, res=300)
+tiff(filename = "MyResults_DEG/dispersion.tiff", units="in", width=5, height=5, res=300)
 plotDispEsts(dds, main="Per-gene dispersion estimates")
 invisible(dev.off())
 
@@ -123,7 +122,7 @@ res$FoldChange <- 2^res$log2FoldChange
 res <- res[colnames(res)[c(1,7,2:6)]] # order columns
     
 # MAplot
-tiff(filename = "MyResults/maplot.tiff", units="in", width=5, height=5, res=300)
+tiff(filename = "MyResults_DEG/maplot.tiff", units="in", width=5, height=5, res=300)
 plotMA(res, alpha= 0.05, main=paste("MA-plot", suffix, sep=" "))
 invisible(dev.off())
 
@@ -138,17 +137,38 @@ description <- mapIds(get('org.Hs.eg.db'), keys=row.names(res),
 res <- cbind(symbol, res)
 res$description <- description
 
-write.table (res, file="MyResults/all_genes.tsv", quote=FALSE, sep="\t", col.names=NA)
+write.table (res, file="MyResults_DEG/all_genes.tsv", quote=FALSE, sep="\t", col.names=NA)
 sig_pval <- subset(res, res$pvalue < cutoff)
-write.table (sig_pval, file="MyResults/sig_pval.tsv", quote=FALSE, sep="\t", col.names=NA)
+write.table (sig_pval, file="MyResults_DEG/sig_pval.tsv", quote=FALSE, sep="\t", col.names=NA)
 rm(sig_pval)
 #Get most significant genes according to cut off
 significant <- subset(res, res$padj < cutoff)
 significant <- significant[order(significant$padj),]
-#Discard those genes with unbelivable Fold Change (outliers)
+
+#PCA 2D
+interest_genes <- rownames(significant)
+dds_sig <- dds[interest_genes,]
+vst_sig <- varianceStabilizingTransformation(dds_sig, blind = FALSE)
+mat_sig <- assay(vst_sig)
+mm_sig <- model.matrix(~condition, colData(vst_sig))
+mat_sig <- limma::removeBatchEffect(mat_sig,
+                                batch=vst_sig$PED, batch2=vst_sig$gender,
+                                batch3=vst_sig$age, design=mm_sig)
+assay(vst_sig) <- mat_sig
+tiff(filename = "MyResults_DEG/PCA_sig.tiff", units="in", width=5, 
+     height=5, res=300)
+pca_sig <- plotPCA(vst_sig)
+pca_sig + ggtitle("PCA - only significant genes") + geom_text_repel(aes
+                                                             (label=colnames(vst_sig)), 
+                                                             size=1.5)
+invisible(dev.off())
+
+
+#Discard those genes with unbelievable Fold Change (outliers)
 significant <- significant[(significant$log2FoldChange >= -FC_threshold) & 
                              (significant$log2FoldChange <= FC_threshold),]
-write.table (significant, file="MyResults/0.05_sig_padj.tsv", quote=FALSE, sep="\t", col.names=NA)
+write.table (significant, file="MyResults_DEG/0.05_sig_padj.tsv", quote=FALSE, sep="\t", col.names=NA)
+
 
 
 #Volcano plot
@@ -159,7 +179,7 @@ res2 <- res2[remove_outliers,]
 rm(discardNA)
 rm(remove_outliers)
 
-jpeg(filename = "MyResults/VolcanoPLOT.jpeg", units="in", width=8, height=10, res=300)
+jpeg(filename = "MyResults_DEG/VolcanoPLOT.jpeg", units="in", width=8, height=10, res=300)
 EnhancedVolcano(res2, lab = res2$symbol, x = 'log2FoldChange', y = 'pvalue',
                 pCutoff = 0.0002, FCcutoff= 0.3, #pCutOff is p value for last significant acc to adjp value
                 ylim = c(0, 11), xlim = c(-FC_threshold, FC_threshold), labSize = 3,
@@ -187,7 +207,7 @@ df <- data.frame(condition=conds$condition)
 rownames(df) <- samples
 my_colour <- list(df=c(l1="skyblue", l2="orange"))
 
-jpeg(filename = "MyResults/heatmap.jpeg", units="in", width=8, height=5, res=300)
+jpeg(filename = "MyResults_DEG/heatmap.jpeg", units="in", width=8, height=5, res=300)
 pheatmap(lsubcounts, scale= 'row', cluster_rows = TRUE,
          cluster_cols = TRUE, legend= TRUE, drop_levels = TRUE, 
          labels_row = make_italics(sig_symbol), 
