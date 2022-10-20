@@ -1,4 +1,4 @@
-setwd("C:/Users/CBM/Desktop/WGNCA/counts")
+setwd("C:/Users/CBM/Desktop/RNAseq_bipolarDisorder")
 
 repos <- "http://cran.us.r-project.org"
 if ("optparse" %in% row.names(installed.packages())  == FALSE) install.packages("optparse", repos = repos)
@@ -97,15 +97,10 @@ heatmap.2(distMat, Rowv=as.dendrogram(hc), symm=TRUE, trace="none", col=rev(hmco
           margin=c(10, 6), main="Distances matrix", key.title=NA)
 invisible(dev.off())
 
-rm(hc)
-rm(distMat)
-rm(distRL)
-
 #Dispersion plot
 tiff(filename = "MyResults_DEG/dispersion.tiff", units="in", width=5, height=5, res=300)
 plotDispEsts(dds, main="Per-gene dispersion estimates")
 invisible(dev.off())
-
 
 ##Pair-wise comparisons
 #Get factor levels
@@ -142,7 +137,9 @@ rm(sig_pval)
 #Get most significant genes according to cut off
 significant <- subset(res, res$padj < cutoff)
 significant <- significant[order(significant$padj),]
-
+#Discard those genes with unbelievable Fold Change (outliers)
+significant <- significant[(significant$log2FoldChange >= -FC_threshold) & 
+                             (significant$log2FoldChange <= FC_threshold),]
 #PCA 2D
 interest_genes <- rownames(significant)
 dds_sig <- dds[interest_genes,]
@@ -161,13 +158,7 @@ pca_sig + ggtitle("PCA - only significant genes") + geom_text_repel(aes
                                                              size=1.5)
 invisible(dev.off())
 
-
-#Discard those genes with unbelievable Fold Change (outliers)
-significant <- significant[(significant$log2FoldChange >= -FC_threshold) & 
-                             (significant$log2FoldChange <= FC_threshold),]
 write.table (significant, file="MyResults_DEG/0.05_sig_padj.tsv", quote=FALSE, sep="\t", col.names=NA)
-
-
 
 #Volcano plot
 discardNA <- !is.na(res$padj)
