@@ -64,10 +64,12 @@ rm(keep)
 dds <- estimateSizeFactors(data)
 dds <- estimateDispersions(dds)
 dds <- nbinomWaldTest(dds, maxit = 10000)
-
+dds_raw <- counts(dds, normalized=FALSE)
 dds_normalized <- counts(dds, normalized=TRUE)
 
-#save file with normalized counts: will be used for WGCNA
+#save file with counts and normalized counts
+write.table (dds_raw, file="MyResults_DEG/counts_raw.tsv", quote=FALSE, 
+             sep = "\t", col.names=NA)
 write.table (dds_normalized, file="MyResults_DEG/counts_normalized.tsv", quote=FALSE, 
              sep = "\t", col.names=NA)
 

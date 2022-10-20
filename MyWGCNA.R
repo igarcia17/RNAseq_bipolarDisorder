@@ -1,13 +1,65 @@
 setwd("C:/Users/CBM/Desktop/RNAseq_bipolarDisorder")
-
+library(dplyr)
+library(DESeq2)
+library(magrittr)
+library(ggplot2)
 library(WGCNA)
 options(stringsAsFactors = FALSE)
 
 #1. Load data
-df <- read.table(file = 'MyResults_DEG/counts_normalized.tsv', sep = '\t', header = FALSE)
+#Load variables
+sampleTable <- read.table('configfile_pedlabels.txt', header=TRUE, row.names = 1, 
+                          colClasses = c('character','factor', 'factor', 
+                                         'factor', 'factor'))
+sampleTable <- sampleTable[,c(3,4,5,2)]
+names(sampleTable) #check condition, gender, age and PED are present
+
+#Load expression data
+df <- read.table(file = 'MyResults_DEG/counts_raw.tsv', sep = '\t', 
+                 header = TRUE, row.names = 1)
+#Filter low count genes, with less than 10 counts in 90% of features
+keep <- rowSums(df > 10) > (ncol(df) * 0.9)
+df <- df[keep,] #drastic drop from 28525 to 14938
+#order as in metafile
+df <- df %>%
+  dplyr::select(rownames(sampleTable))
+
+datExpr <- as.data.frame(t(df))
+
+#Quality control
+#check genes and samples with many missing values
+gsg <- goodSamplesGenes(datExpr0, verbose = 3)
+if (!gsg$allOK){
+  # Print the gene and sample names that were removed:
+  if (sum(!gsg$goodGenes)>0)
+    printFlush(paste("Removing genes:", paste(names(datExpr0)[!gsg$goodGenes], collapse = ", ")));
+  if (sum(!gsg$goodSamples)>0)
+    printFlush(paste("Removing samples:", paste(rownames(datExpr0)[!gsg$goodSamples], collapse = ", ")));
+  # Remove the offending genes and samples from the data:
+  datExpr <- datExpr[gsg$goodSamples, gsg$goodGenes]
+}
+
+#cluster to detect outliers
+sampleTree <- hclust(dist(datExpr0), method = 'average')
+sizeGrWindow(12,9)
+#pdf(file = "MyResults_WGCNA/sampleClustering.pdf", width = 12, height = 9);
+par(cex = 0.6);
+par(mar = c(0,4,2,0))
+plot(sampleTree, main = "Sample clustering to detect outliers", sub="", xlab="", cex.lab = 1.5,
+     cex.axis = 1.5, cex.main = 2)
+#It doesn't seem to be any outlier
 
 
-#2. Network construction and module detection  
+
+
+
+
+#save relevant objects
+save(datExpr, sampleTable, file = 'MyResults_WGCNA/initialData_datExpr_sampleTable.RData')
+
+#2. Network construction and module detection
+
+
 
 #3. Relating modules to external clinical traits and identifying important genes
 
