@@ -1,9 +1,10 @@
 setwd("C:/Users/CBM/Desktop/RNAseq_bipolarDisorder")
-library(dplyr)
-library(DESeq2)
-library(magrittr)
-library(ggplot2)
-library(WGCNA)
+library(dplyr, quietly = T)
+library(DESeq2, quietly = T)
+library(magrittr, quietly = T)
+library(ggplot2, quietly = T)
+library(WGCNA, quietly = T)
+#library(limma, quietly = T)
 options(stringsAsFactors = FALSE)
 
 #1. Load data
@@ -23,7 +24,13 @@ df <- df[keep,] #drastic drop from 28525 to 14938
 #order as in metafile
 df <- df %>%
   dplyr::select(rownames(sampleTable))
+#Remove batch effect of covariates
+mm <- model.matrix(~condition, data = sampleTable)
+df <- limma::removeBatchEffect(df,
+                                batch=sampleTable$PED, batch2=sampleTable$gender,
+                                batch3=sampleTable$age, design=mm)
 
+#Transpose for the WGCNA
 datExpr <- as.data.frame(t(df))
 
 #Quality control
