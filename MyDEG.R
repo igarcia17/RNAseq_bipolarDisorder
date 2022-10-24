@@ -1,7 +1,6 @@
 setwd("C:/Users/CBM/Desktop/RNAseq_bipolarDisorder")
 
 repos <- "http://cran.us.r-project.org"
-if ("optparse" %in% row.names(installed.packages())  == FALSE) install.packages("optparse", repos = repos)
 if ("gplots" %in% row.names(installed.packages())  == FALSE) install.packages("gplots", repos = repos)
 if ("ggplot2" %in% row.names(installed.packages())  == FALSE) install.packages("ggplot2", repos = repos)
 if ("RColorBrewer" %in% row.names(installed.packages())  == FALSE) install.packages("RColorBrewer", repos = repos)
@@ -16,7 +15,6 @@ if ('org.Hs.eg.db' %in% row.names(installed.packages()) == FALSE) BiocManager::i
 if ("EnhancedVolcano" %in% row.names(installed.packages())  == FALSE) BiocManager::install("EnhancedVolcano")
 
 suppressPackageStartupMessages({
-  library(optparse, quietly = TRUE)
   library(vsn, quietly = TRUE)
   library(gplots, quietly = TRUE)
   library(ggplot2, quietly = TRUE)

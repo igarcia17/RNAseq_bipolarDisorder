@@ -1,10 +1,12 @@
 setwd("C:/Users/CBM/Desktop/RNAseq_bipolarDisorder")
+suppressPackageStartupMessages({
 library(dplyr, quietly = T)
 library(DESeq2, quietly = T)
 library(magrittr, quietly = T)
 library(ggplot2, quietly = T)
 library(WGCNA, quietly = T)
 #library(limma, quietly = T)
+})
 options(stringsAsFactors = FALSE)
 
 #1. Load data
