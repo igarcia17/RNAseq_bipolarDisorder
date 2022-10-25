@@ -12,8 +12,7 @@ options(stringsAsFactors = FALSE)
 #1. Load data
 #Load variables
 sampleTable <- read.table('configfile_pedlabels.txt', header=TRUE, row.names = 1, 
-                          colClasses = c('character','factor', 'factor', 
-                                         'factor', 'factor'))
+                          colClasses = rep('factor', 5))
 sampleTable <- sampleTable[,c(3,4,5,2)]
 names(sampleTable) #check condition, gender, age and PED are present
 
@@ -26,18 +25,25 @@ df <- df[keep,] #drastic drop from 28525 to 14938
 #order as in metafile
 df <- df %>%
   dplyr::select(rownames(sampleTable))
-#Remove batch effect of covariates
-mm <- model.matrix(~condition, data = sampleTable)
-df <- limma::removeBatchEffect(df,
-                                batch=sampleTable$PED, batch2=sampleTable$gender,
-                                batch3=sampleTable$age, design=mm)
+rm(keep)
+#Get a DeSeq object
+dds <- DESeqDataSetFromMatrix(countData = df, colData = sampleTable, 
+                              design = ~ age + gender + PED + condition)
+
+dds_norm <- vst(dds, blind = FALSE)
+df_norm <- assay(dds_norm)
+mm <- model.matrix(~condition, colData(dds_norm))
+df_norm <- limma::removeBatchEffect(df_norm,
+                                batch=dds_norm$PED, batch2=dds_norm$gender,
+                                batch3=dds_norm$age, design=mm)
 
 #Transpose for the WGCNA
-datExpr <- as.data.frame(t(df))
+datExpr <- as.data.frame(t(df_norm))
 
 #Quality control
 #check genes and samples with many missing values
-gsg <- goodSamplesGenes(datExpr0, verbose = 3)
+gsg <- goodSamplesGenes(datExpr, verbose = 3)
+gsg$allOK
 if (!gsg$allOK){
   # Print the gene and sample names that were removed:
   if (sum(!gsg$goodGenes)>0)
@@ -49,24 +55,27 @@ if (!gsg$allOK){
 }
 
 #cluster to detect outliers
-sampleTree <- hclust(dist(datExpr0), method = 'average')
+sampleTree <- hclust(dist(datExpr), method = 'average')
 sizeGrWindow(12,9)
-#pdf(file = "MyResults_WGCNA/sampleClustering.pdf", width = 12, height = 9);
+pdf(file = "MyResults_WGCNA/sampleClustering.pdf", width = 12, height = 9);
 par(cex = 0.6);
 par(mar = c(0,4,2,0))
 plot(sampleTree, main = "Sample clustering to detect outliers", sub="", xlab="", cex.lab = 1.5,
      cex.axis = 1.5, cex.main = 2)
+invisible(dev.off())
 #It doesn't seem to be any outlier
-
-
-
-
-
-
 #save relevant objects
 save(datExpr, sampleTable, file = 'MyResults_WGCNA/initialData_datExpr_sampleTable.RData')
 
 #2. Network construction and module detection
+#Determine parameters
+sft <- pickSoftThreshold(datExpr, dataIsExpr = T, corFnc = cor, networkType = 'signed')
+sft_df <- data.frame(sft$fitIndices %>% dplyr::mutate(model_fit = -sign(slope) * SFT.R.sq))
+ggplot(sft_df, aes(x= Power, y = model_fit, label = Power)) +
+  geom_point() + geom_text(nudge_y = 0.1) + geom_hline(yintercept = 0.8, col = 'red') +
+  ylim(c(min(sft_df$model_fit), 1.05)) + xlab('Soft thershold (power)') +
+  ylab('Scale Free Topology Model Fit, signed R^2') + ggtitle('Scale independence') +
+  theme_classic()
 
 
 
