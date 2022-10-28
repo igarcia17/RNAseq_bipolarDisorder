@@ -68,12 +68,12 @@ invisible(dev.off())
 #It doesn't seem to be any outlier
 #####
 #save relevant objects
-save(datExpr, sampleTable, file = 'MyResults_WGCNA/initialData_datExpr_sampleTable.RData')
+#save(datExpr, sampleTable, file = 'MyResults_WGCNA/initialData_datExpr_sampleTable.RData')
 
 #2. Network construction and module detection
 #Determine parameters: soft threshold
 powers <- c(c(1:10), seq(from = 12, to=20, by=2))
-
+#####
 #For an unsigned network:
 sft_un <- pickSoftThreshold(datExpr, powerVector = powers, 
                             networkType = 'unsigned', verbose = 5)
@@ -93,7 +93,7 @@ plot(sft_un$fitIndices[,1], sft_un$fitIndices[,5],
      main = paste("Mean connectivity"))
 text(sft_un$fitIndices[,1], sft_un$fitIndices[,5], labels=powers, cex=cex1,col="red")
 invisible(dev.off())
-
+#####
 #For a signed network:
 sft_s <- pickSoftThreshold(datExpr, powerVector = powers, networkType = 'signed', verbose = 5)
 tiff(file = "MyResults_WGCNA/softT_signed.tiff")
@@ -113,6 +113,24 @@ plot(sft_s$fitIndices[,1], sft_s$fitIndices[,5],
 text(sft_s$fitIndices[,1], sft_s$fitIndices[,5], labels=powers, cex=cex1,col="red")
 invisible(dev.off())
 
+#Build network
+net <- blockwiseModules(datExpr, networkType = 'signed', minModuleSize = 40,
+                          TOMType = 'signed', power = 12, randomSeed = 1,
+                          numericLabels = T, verbose = 5)
+#Plot
+sizeGrWindow(12, 9)
+mergedColors <- labels2colors(net$colors)
+plotDendroAndColors(net$dendrograms[[1]], mergedColors[net$blockGenes[[1]]],
+                    "Module colors",
+                    dendroLabels = FALSE, hang = 0.03,
+                    addGuide = TRUE, guideHang = 0.05)
+#save results
+moduleLabels <- net$colors
+moduleColors <- labels2colors(net$colors)
+MEs <- net$MEs
+geneTree <- net$dendrograms[[1]]
+save(MEs, moduleLabels, moduleColors, geneTree,
+     file = "MyResults_WGCNA/netwrok_auto.RData")
 
 # Call the network topology analysis function
 
