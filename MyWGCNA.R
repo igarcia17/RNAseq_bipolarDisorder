@@ -8,6 +8,8 @@ library(WGCNA, quietly = T)
 #library(limma, quietly = T)
 })
 options(stringsAsFactors = FALSE)
+enableWGCNAThreads()
+
 
 #1. Load data
 #Load variables
@@ -53,8 +55,8 @@ if (!gsg$allOK){
   # Remove the offending genes and samples from the data:
   datExpr <- datExpr[gsg$goodSamples, gsg$goodGenes]
 }
-
-#cluster to detect outliers
+#####
+##cluster to detect outliers
 sampleTree <- hclust(dist(datExpr), method = 'average')
 sizeGrWindow(12,9)
 pdf(file = "MyResults_WGCNA/sampleClustering.pdf", width = 12, height = 9);
@@ -64,19 +66,55 @@ plot(sampleTree, main = "Sample clustering to detect outliers", sub="", xlab="",
      cex.axis = 1.5, cex.main = 2)
 invisible(dev.off())
 #It doesn't seem to be any outlier
+#####
 #save relevant objects
 save(datExpr, sampleTable, file = 'MyResults_WGCNA/initialData_datExpr_sampleTable.RData')
 
 #2. Network construction and module detection
-#Determine parameters
-sft <- pickSoftThreshold(datExpr, dataIsExpr = T, corFnc = cor, networkType = 'signed')
-sft_df <- data.frame(sft$fitIndices %>% dplyr::mutate(model_fit = -sign(slope) * SFT.R.sq))
-ggplot(sft_df, aes(x= Power, y = model_fit, label = Power)) +
-  geom_point() + geom_text(nudge_y = 0.1) + geom_hline(yintercept = 0.8, col = 'red') +
-  ylim(c(min(sft_df$model_fit), 1.05)) + xlab('Soft thershold (power)') +
-  ylab('Scale Free Topology Model Fit, signed R^2') + ggtitle('Scale independence') +
-  theme_classic()
+#Determine parameters: soft threshold
+powers <- c(c(1:10), seq(from = 12, to=20, by=2))
 
+#For an unsigned network:
+sft_un <- pickSoftThreshold(datExpr, powerVector = powers, 
+                            networkType = 'unsigned', verbose = 5)
+tiff(file = "MyResults_WGCNA/softT_unsigned.tiff", units="in", width=5, 
+     height=5, res=300)
+par(mfrow = c(1,2))
+cex1 <- 0.9
+plot(sft_un$fitIndices[,1], -sign(sft_un$fitIndices[,3])*sft_un$fitIndices[,2],
+     xlab="Soft Threshold (power)",ylab="Scale Free Topology Model Fit,signed R^2",type="n",
+     main = paste("Scale independence"))
+text(sft_un$fitIndices[,1], -sign(sft_un$fitIndices[,3])*sft_un$fitIndices[,2],
+     labels=powers,cex=cex1,col="red")
+# this line corresponds to using an R^2 cut-off of h
+abline(h=0.90,col="red")
+plot(sft_un$fitIndices[,1], sft_un$fitIndices[,5],
+     xlab="Soft Threshold (power)",ylab="Mean Connectivity", type="n",
+     main = paste("Mean connectivity"))
+text(sft_un$fitIndices[,1], sft_un$fitIndices[,5], labels=powers, cex=cex1,col="red")
+invisible(dev.off())
+
+#For a signed network:
+sft_s <- pickSoftThreshold(datExpr, powerVector = powers, networkType = 'signed', verbose = 5)
+tiff(file = "MyResults_WGCNA/softT_signed.tiff")
+
+par(mfrow = c(1,2))
+cex1 = 0.9
+
+plot(sft_s$fitIndices[,1], -sign(sft_s$fitIndices[,3])*sft_s$fitIndices[,2],
+     xlab="Soft Threshold (power)",ylab="Scale Free Topology Model Fit,signed R^2",type="n",
+     main = paste("Scale independence"))
+text(sft_s$fitIndices[,1], -sign(sft_s$fitIndices[,3])*sft_s$fitIndices[,2],
+     labels=powers,cex=cex1,col="red")
+abline(h=0.90,col="red")
+plot(sft_s$fitIndices[,1], sft_s$fitIndices[,5],
+     xlab="Soft Threshold (power)",ylab="Mean Connectivity", type="n",
+     main = paste("Mean connectivity"))
+text(sft_s$fitIndices[,1], sft_s$fitIndices[,5], labels=powers, cex=cex1,col="red")
+invisible(dev.off())
+
+
+# Call the network topology analysis function
 
 
 #3. Relating modules to external clinical traits and identifying important genes
