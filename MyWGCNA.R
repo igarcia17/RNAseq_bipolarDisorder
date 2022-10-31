@@ -71,6 +71,7 @@ invisible(dev.off())
 #save(datExpr, sampleTable, file = 'MyResults_WGCNA/initialData_datExpr_sampleTable.RData')
 
 #2. Network construction and module detection
+load(file = 'MyResults_WGCNA/initialData_datExpr_sampleTable.RData')
 #Determine parameters: soft threshold
 powers <- c(c(1:10), seq(from = 12, to=20, by=2))
 #####
@@ -113,24 +114,68 @@ plot(sft_s$fitIndices[,1], sft_s$fitIndices[,5],
 text(sft_s$fitIndices[,1], sft_s$fitIndices[,5], labels=powers, cex=cex1,col="red")
 invisible(dev.off())
 
+#Therefore we set the soft threshold parameter at 12 as it is the lowest at which
+#we obtain a R^2 of 0.9
+sft_power <- 12
+minMod <- 15
+
 #Build network
-net <- blockwiseModules(datExpr, networkType = 'signed', minModuleSize = 40,
+net <- blockwiseModules(datExpr, networkType = 'signed', minModuleSize = minMod,
                           TOMType = 'signed', power = 12, randomSeed = 1,
                           numericLabels = T, verbose = 5)
 #Plot
-sizeGrWindow(12, 9)
+tiff(file = "MyResults_WGCNA/cluster_dendo_auto_min15.tiff")
 mergedColors <- labels2colors(net$colors)
 plotDendroAndColors(net$dendrograms[[1]], mergedColors[net$blockGenes[[1]]],
                     "Module colors",
                     dendroLabels = FALSE, hang = 0.03,
                     addGuide = TRUE, guideHang = 0.05)
+invisible(dev.off())
 #save results
-moduleLabels <- net$colors
+'moduleLabels <- net$colors
 moduleColors <- labels2colors(net$colors)
 MEs <- net$MEs
 geneTree <- net$dendrograms[[1]]
 save(MEs, moduleLabels, moduleColors, geneTree,
      file = "MyResults_WGCNA/netwrok_auto.RData")
+'
+###STEP BY STEP NETWORK CoNSTRUCTION
+#coexpression similarity and adjacency
+adjac <- adjacency(datExpr, power = sft_power)
+#topological overlap matrix
+tom <- TOMsimilarity(adjac, TOMType = 'signed', verbose = 5)
+diss_tom <- 1-tom
+
+geneTree <-hclust(as.dist(diss_tom), method = 'average')
+plot(geneTree, xlab = '', sub = '', main = 'Gene clustering on TOM-based dissimilarity',
+     labels = F, hang = 0.04)
+
+#Cut the dendrogram
+minMod <- 15
+dynamicMods <- cutreeDynamic(geneTree, distM = diss_tom, deepSplit =2, 
+                             pamRespectsDendro =F, minClusterSize = minMod)
+table(dynamicMods)
+
+dynColors <- labels2colors(dynamicMods)
+plotDendroAndColors(geneTree, dynColors, 'Dynamic Tree Cut', dendroLabels = F, 
+                    hang=0.03, addGuide = T, guideHang = 0.05, 
+                    main = 'Gene dendrogram and module colors')
+
+#Merge modules with similar expression profile
+MEList <- moduleEigengenes(datExpr, colors = dynColors)
+MEs <-MEList$eigengenes
+MEDiss <- 1-cor(MEs)
+METree <- hclust(as.dist(MEDiss), method = 'average')
+
+plot(METree, main = 'Clustering of Module Eigengenes')
+
+#we set a height cut of 0.25 which corresponds to a correlation of 75%
+MEDissThr <- 0.25
+abline(h=MEDissThr, col = 'red')
+merge <- mergeCloseModules(datExpr, dynColors, cutHeight = MEDissThr, verbose = 3)
+mergedCols <- merge$colors
+mergedMEs <- merge$newMEs
+
 
 # Call the network topology analysis function
 
