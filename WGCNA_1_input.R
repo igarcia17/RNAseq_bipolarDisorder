@@ -5,7 +5,6 @@ suppressPackageStartupMessages({
   library(magrittr, quietly = T)
   library(ggplot2, quietly = T)
   library(WGCNA, quietly = T)
-  #library(limma, quietly = T)
 })
 options(stringsAsFactors = FALSE)
 enableWGCNAThreads()
@@ -15,7 +14,7 @@ enableWGCNAThreads()
 sampleTable <- read.table('configfile_pedlabels.txt', header=TRUE, row.names = 1, 
                           colClasses = rep('factor', 5))
 sampleTable <- sampleTable[,c(3,4,5,2)]
-names(sampleTable) #check condition, gender, age and PED are present
+names(sampleTable) #check gender, age, PED and condition are present
 
 #Load expression data
 df <- read.table(file = 'MyResults_DEG/counts_raw.tsv', sep = '\t', 
@@ -66,4 +65,4 @@ invisible(dev.off())
 #It doesn't seem to be any outlier
 #####
 #save relevant objects
-#save(datExpr, sampleTable, file = 'MyResults_WGCNA/initialData_datExpr_sampleTable.RData')
+save(datExpr, sampleTable, file = 'MyResults_WGCNA/initialData_datExpr_sampleTable.RData')

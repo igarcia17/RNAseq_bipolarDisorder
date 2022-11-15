@@ -1,15 +1,9 @@
-#!/usr/bin/env Rscript
-##
-##R Script to make GSEA analysis
-##The input must be a tab-separated file with 2 columns: first column must contain the gene IDs
-##and the second one the log2FC values.
-##
-##THE ORDER OF THE COLUMNS IS VERY IMPORTANT!!
+
 ## 
-## Eva Sacristán and Sandra González (GENGS CBMSO)
+## Based on the scripts by Eva Sacristán and Sandra González (GENGS CBMSO)
 
 #####################
-setwd("C:/Users/CBM/Desktop/RNAseq_bipolarDisorder")
+setwd("C:/Users/Asus/OneDrive/Escritorio/RNAseq_bipolarDisorder")
 
 suppressPackageStartupMessages({
   library(BiocManager, quietly = TRUE)
@@ -34,7 +28,9 @@ dat <- sort(dat, decreasing=TRUE)
 #Calculate GSEA and write tables of results
 
 category <- 'H'
-db_sets <- msigdbr(species = 'Homo sapiens', category = category)%>% 
+subcategory <- NULL
+db_sets <- msigdbr(species = 'Homo sapiens', category = category, 
+                   subcategory = subcategory)%>% 
   dplyr::select(gs_name, ensembl_gene)
 head(db_sets) #each gene associated with each msig group
 
@@ -74,35 +70,36 @@ invisible(dev.off())
 
 ##Upset plot (of the 20 first terms)
 
-genes_20first <- as.data.frame(as.factor(head(egs@result$core_enrichment, 20)))
-lista_20first <- list()
-for (i in 1:nrow(genes_20first)){
-    lista_20first[[i]] <- unlist(strsplit(as.character(genes_20first[i,1]),split="/"))   
+genes_first <- as.data.frame(as.factor(head(egs@result$core_enrichment, 10)))
+lista_first <- list()
+for (i in 1:nrow(genes_first)){
+    lista_first[[i]] <- unlist(strsplit(as.character(genes_first[i,1]),split="/"))   
 }
 uniq_genes <- as.character(unique(names(dat))) #es necesario?
 
-func_20first <- egs$Description[1:20]
-mat <- matrix(0L, nrow = length(uniq_genes), ncol = length(func_20first)) 
+func_first <- egs$Description[1:10]
+mat <- matrix(0L, nrow = length(uniq_genes), ncol = length(func_first)) 
 
 for (i in 1:length(uniq_genes)) {
-  for (j in 1:length(func_20first)) {
+  for (j in 1:length(func_first)) {
     gen <- uniq_genes[i]
-    if (gen %in% lista_20first[[j]]) {
+    if (gen %in% lista_first[[j]]) {
       mat[i,j] =  1
 }}} 
  
-mat_20first <- as.data.frame(mat)
-colnames(mat_20first) <- func_20first
-row.names(mat_20first) <- uniq_genes
+mat_first <- as.data.frame(mat)
+colnames(mat_first) <- func_first
+row.names(mat_first) <- uniq_genes
 
 
-jpeg(file = "MyResults_GSEA/GSEA_upset_20first.jpeg", units = 'in', width = 15, height = 10, res = 300)
-    upset(mat_20first, nsets=10, order.by="freq", sets.bar.color="skyblue")
+jpeg(file = "MyResults_GSEA/Upset_plot_first.jpeg", units = 'in', width = 15, 
+     height = 10, res = 300)
+upset(mat_first, nsets=10, order.by="freq", sets.bar.color="skyblue")
 invisible(dev.off())
 
 ##################################
 
-###Plot the GSEA if terms are provided and if not, plot the first 5 more abundant terms
+###Plot the first 5 more abundant terms
 
 for (j in 1:5){
   pl <- gseaplot2(egs, geneSetID=j, title = egs$Description[j], base_size=40, color="red")
@@ -110,6 +107,7 @@ for (j in 1:5){
   filename <- paste('MyResults_GSEA/',desc, "_GSEA.jpeg", sep ="")
   ggsave(pl, file=filename, device = "jpeg", units= "in", height = 15, width = 20)
 }
-
-gseap <- gseaplot2(egs, geneSetID = 'todos', pvalue_table = T)
-ggsave(gseap, file='All gseaplots', device = "jpeg", units= "in", height = 15, width = 20)
+#For all first 10 categories at once:
+gseap <- gseaplot2(egs, geneSetID = 1:10, pvalue_table = F)
+ggsave(gseap, file='MyResults_GSEA/All_gseaplots.jpeg', device = "jpeg", units= "in", 
+       height = 15, width = 20)

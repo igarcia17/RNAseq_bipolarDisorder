@@ -28,7 +28,7 @@ plot(sft_un$fitIndices[,1], -sign(sft_un$fitIndices[,3])*sft_un$fitIndices[,2],
      main = paste("Scale independence"))
 text(sft_un$fitIndices[,1], -sign(sft_un$fitIndices[,3])*sft_un$fitIndices[,2],
      labels=powers,cex=cex1,col="red")
-# this line corresponds to using an R^2 cut-off of h
+# line corresponds to using an R^2 cut-off of h
 abline(h=0.90,col="red")
 plot(sft_un$fitIndices[,1], sft_un$fitIndices[,5],
      xlab="Soft Threshold (power)",ylab="Mean Connectivity", type="n",
