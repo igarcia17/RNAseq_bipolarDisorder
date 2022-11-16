@@ -1,19 +1,5 @@
 setwd("C:/Users/CBM/Desktop/RNAseq_bipolarDisorder")
 
-repos <- "http://cran.us.r-project.org"
-if ("gplots" %in% row.names(installed.packages())  == FALSE) install.packages("gplots", repos = repos)
-if ("ggplot2" %in% row.names(installed.packages())  == FALSE) install.packages("ggplot2", repos = repos)
-if ("RColorBrewer" %in% row.names(installed.packages())  == FALSE) install.packages("RColorBrewer", repos = repos)
-if ("cluster" %in% row.names(installed.packages())  == FALSE) install.packages("cluster", repos = repos)
-if ("pheatmap" %in% row.names(installed.packages())  == FALSE) install.packages("pheatmap", repos = repos)
-if ("grid" %in% row.names(installed.packages())  == FALSE) install.packages("grid", repos = repos)
-if (!requireNamespace("BiocManager", quietly = TRUE)) install.packages("BiocManager", repos = repos)
-if ("DESeq2" %in% row.names(installed.packages()) == FALSE) BiocManager::install("DESeq2")
-if ("AnnotationDbi" %in% row.names(installed.packages()) == FALSE) BiocManager::install("AnnotationDbi")
-if ("vsn" %in% row.names(installed.packages())  == FALSE) BiocManager::install("vsn")
-if ('org.Hs.eg.db' %in% row.names(installed.packages()) == FALSE) BiocManager::install('org.Hs.eg.db')
-if ("EnhancedVolcano" %in% row.names(installed.packages())  == FALSE) BiocManager::install("EnhancedVolcano")
-
 suppressPackageStartupMessages({
   library(vsn, quietly = TRUE)
   library(gplots, quietly = TRUE)
@@ -41,10 +27,9 @@ FC_threshold <- 4 #fold change threshold to consider in graphs
 
 #Load variables of each sample
 config <- './configfile_pedlabels.txt'
-sampleTable <- read.table(config, header=TRUE, colClasses= c('factor','character',
-                                                             'factor',
-                                                             'factor', 'factor',
-                                                             'factor'))
+sampleTable <- read.table(config, header=TRUE, 
+                          colClasses= c('factor','character','factor','factor', 
+                                        'factor','factor'))
 
 #Convert the counts into a DeSeq DataSet object
 data <- DESeqDataSetFromHTSeqCount(sampleTable, directory=".", 
@@ -66,9 +51,9 @@ dds_raw <- counts(dds, normalized=FALSE)
 dds_normalized <- counts(dds, normalized=TRUE)
 
 #save file with counts and normalized counts
-write.table (dds_raw, file="MyResults_DEG/counts_raw.tsv", quote=FALSE, 
+write.table(dds_raw, file="MyResults_DEG/counts_raw.tsv", quote=FALSE, 
              sep = "\t", col.names=NA)
-write.table (dds_normalized, file="MyResults_DEG/counts_normalized.tsv", quote=FALSE, 
+write.table(dds_normalized, file="MyResults_DEG/counts_normalized.tsv", quote=FALSE, 
              sep = "\t", col.names=NA)
 
 #PCA: blind must be FALSE to take into account batch effect

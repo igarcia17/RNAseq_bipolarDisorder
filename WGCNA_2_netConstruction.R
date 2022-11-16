@@ -44,7 +44,8 @@ par(mfrow = c(1,2))
 cex1 = 0.9
 
 plot(sft_s$fitIndices[,1], -sign(sft_s$fitIndices[,3])*sft_s$fitIndices[,2],
-     xlab="Soft Threshold (power)",ylab="Scale Free Topology Model Fit,signed R^2",type="n",
+     xlab="Soft Threshold (power)",ylab="Scale Free Topology Model Fit,signed R^2",
+     type="n",
      main = paste("Scale independence"))
 text(sft_s$fitIndices[,1], -sign(sft_s$fitIndices[,3])*sft_s$fitIndices[,2],
      labels=powers,cex=cex1,col="red")
