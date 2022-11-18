@@ -1,22 +1,14 @@
 setwd("C:/Users/CBM/Desktop/RNAseq_bipolarDisorder")
 
 suppressPackageStartupMessages({
-  library(vsn, quietly = TRUE)
-  library(gplots, quietly = TRUE)
+  library(gplots, quietly = T)
   library(ggplot2, quietly = TRUE)
-  library(RColorBrewer, quietly = TRUE)
-  library(cluster, quietly = TRUE)
   library(pheatmap, quietly = TRUE)
-  library(grid, quietly = TRUE)
-  library(BiocManager, quietly = TRUE)
   library(DESeq2, quietly = TRUE)
-  library(AnnotationDbi, quietly = TRUE)
   library('org.Hs.eg.db', quietly = TRUE, character.only = TRUE)
   library(EnhancedVolcano, quietly = TRUE)
-  library(tidyr, quietly= TRUE)
 })
 require("ggrepel", quietly = TRUE)
-rm(repos)
 
 #Parameters
 
@@ -189,9 +181,3 @@ pheatmap(lsubcounts, scale= 'row', cluster_rows = TRUE,
          annotation_col = df, annotation_colors = my_colour,
          treeheight_row = 30, treeheight_col = 20)
 invisible(dev.off())
-
-rm(conditions)
-rm(conds)
-rm(samples)
-rm(df)
-rm(my_colour)

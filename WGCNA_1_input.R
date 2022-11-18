@@ -2,8 +2,6 @@ setwd("C:/Users/Asus/OneDrive/Escritorio/RNAseq_bipolarDisorder")
 suppressPackageStartupMessages({
   library(dplyr, quietly = T)
   library(DESeq2, quietly = T)
-  library(magrittr, quietly = T)
-  library(ggplot2, quietly = T)
   library(WGCNA, quietly = T)
 })
 options(stringsAsFactors = FALSE)
@@ -57,8 +55,7 @@ if (!gsg$allOK){
 ##cluster to detect outliers
 sampleTree <- hclust(dist(datExpr), method = 'average')
 pdf(file = "MyResults_WGCNA/sampleClustering.pdf", width = 12, height = 9);
-par(cex = 0.6);
-par(mar = c(0,4,2,0))
+par(mar = c(0,4,2,0), cex = 0.6)
 plot(sampleTree, main = "Sample clustering to detect outliers", sub="", xlab="", cex.lab = 1.5,
      cex.axis = 1.5, cex.main = 2)
 invisible(dev.off())

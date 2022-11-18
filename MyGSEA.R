@@ -1,20 +1,13 @@
-
-## 
 ## Based on the scripts by Eva Sacristán and Sandra González (GENGS CBMSO)
 
 #####################
 setwd("C:/Users/Asus/OneDrive/Escritorio/RNAseq_bipolarDisorder")
 
 suppressPackageStartupMessages({
-  library(BiocManager, quietly = TRUE)
   library(clusterProfiler, quietly = TRUE)
-  library(enrichplot, quietly = TRUE)
-  library(UpSetR, quietly = TRUE)
-  library(ggplot2, quietly = TRUE)
-  library(RColorBrewer, quietly = TRUE)
-  library(org.Hs.eg.db)
-  library(fgsea, quietly = T)
   library(msigdbr, quietly = T)
+  library(UpSetR, quietly = TRUE)
+  library(enrichplot, quietly = TRUE)
 })
 
 data <- read.delim('MyResults_DEG/all_genes.tsv', sep= "\t", header=T, row.names = 1)

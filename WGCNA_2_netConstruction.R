@@ -1,10 +1,8 @@
 setwd("C:/Users/Asus/OneDrive/Escritorio/RNAseq_bipolarDisorder")
 suppressPackageStartupMessages({
-library(dplyr, quietly = T)
-library(DESeq2, quietly = T)
-library(magrittr, quietly = T)
-library(ggplot2, quietly = T)
-library(WGCNA, quietly = T)
+  library(dplyr, quietly = T)
+  library(ggplot2, quietly = T)
+  library(WGCNA, quietly = T)
 #library(limma, quietly = T)
 })
 options(stringsAsFactors = FALSE)
