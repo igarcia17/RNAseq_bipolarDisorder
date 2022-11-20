@@ -1,84 +1,91 @@
-setwd("C:/Users/Asus/OneDrive/Escritorio/RNAseq_bipolarDisorder")
+#Weightd Gene Coexpression Network Analysis part 2, for network construction
+#Multiple methods are shown, though at the end the network of interest is manually
+#built, soft threshold and signed. Bsed on the tutorials by Peter Langfelder
+
+#Part 2: Network construction and module detection
 suppressPackageStartupMessages({
+  library(rstudioapi, quietly=T)
   library(dplyr, quietly = T)
   library(ggplot2, quietly = T)
   library(WGCNA, quietly = T)
-#library(limma, quietly = T)
 })
-options(stringsAsFactors = FALSE)
+options(stringsAsFactors = F)
 enableWGCNAThreads()
 
-#2. Network construction and module detection
-load(file = 'MyResults_WGCNA/initialData_datExpr_sampleTable.RData')
+#Paths to files
+workingD <- rstudioapi::getActiveDocumentContext()$path
+setwd(dirname(workingD))
 
-#Determine parameters: soft threshold
+#Parameters
+sign <- T #signed or unsigned network
+Rcutoff <- 0.9 #R^2 cut off
 powers <- c(c(1:10), seq(from = 12, to=20, by=2))
-#####
-#For an unsigned network:
-sft_un <- pickSoftThreshold(datExpr, powerVector = powers, 
-                            networkType = 'unsigned', verbose = 5)
-tiff(file = "MyResults_WGCNA/softT_unsigned.tiff", units="in", width=5, 
-     height=5, res=300)
-par(mfrow = c(1,2))
+minMod <- 15 #Set minimum module size
+
+#Input/output
+resD <- 'resultsWGCNA'
+input <- paste0(resD,'initialData_datExpr_sampleTable.RData')
+load(file = input)
+unsignedSFTF <- paste0(resD,"softT_unsigned.tiff")
+signedSFTF <- paste0(resD,"softT_signed.tiff")
+autodendroF <- paste0(resD,"cluster_dendro_auto_min", minMod, ".tiff")
+
+#Parameters: inspection of scale free topology by network type
+if (sign){
+  sft <- pickSoftThreshold(datExpr, powerVector = powers, networkType = 'signed', 
+                           verbose = 5)
+  filename <- signedSFTF
+} else {
+  sft <- pickSoftThreshold(datExpr, powerVector = powers, 
+                           networkType = 'unsigned', verbose = 5)
+  filename <- unsignedSFTF
+}
+#Plot how does data fit the scale free network model and mean connectivity
+#based on the threshold used.
+x <- sft$fitIndices[,1]
+xlab <- "Soft Threshold (power)"
+y1 <- -sign(sft$fitIndices[,3])*sft$fitIndices[,2]
+ylab1 <- "Scale Free Topology Model Fit, signed R^2"
+y2 <- sft$fitIndices[,5]
+ylab2 <- "Mean Connectivity"
+
 cex1 <- 0.9
-plot(sft_un$fitIndices[,1], -sign(sft_un$fitIndices[,3])*sft_un$fitIndices[,2],
-     xlab="Soft Threshold (power)",ylab="Scale Free Topology Model Fit,signed R^2",type="n",
-     main = paste("Scale independence"))
-text(sft_un$fitIndices[,1], -sign(sft_un$fitIndices[,3])*sft_un$fitIndices[,2],
-     labels=powers,cex=cex1,col="red")
-# line corresponds to using an R^2 cut-off of h
-abline(h=0.90,col="red")
-plot(sft_un$fitIndices[,1], sft_un$fitIndices[,5],
-     xlab="Soft Threshold (power)",ylab="Mean Connectivity", type="n",
-     main = paste("Mean connectivity"))
-text(sft_un$fitIndices[,1], sft_un$fitIndices[,5], labels=powers, cex=cex1,col="red")
-invisible(dev.off())
-#####
-#For a signed network:
-sft_s <- pickSoftThreshold(datExpr, powerVector = powers, networkType = 'signed', verbose = 5)
-
-tiff(file = "MyResults_WGCNA/softT_signed.tiff")
+tiff(file = filename, units="in", width=5, height=5, res=300)
 par(mfrow = c(1,2))
-cex1 = 0.9
 
-plot(sft_s$fitIndices[,1], -sign(sft_s$fitIndices[,3])*sft_s$fitIndices[,2],
-     xlab="Soft Threshold (power)",ylab="Scale Free Topology Model Fit,signed R^2",
-     type="n",
-     main = paste("Scale independence"))
-text(sft_s$fitIndices[,1], -sign(sft_s$fitIndices[,3])*sft_s$fitIndices[,2],
-     labels=powers,cex=cex1,col="red")
-abline(h=0.90,col="red")
-plot(sft_s$fitIndices[,1], sft_s$fitIndices[,5],
-     xlab="Soft Threshold (power)",ylab="Mean Connectivity", type="n",
-     main = paste("Mean connectivity"))
-text(sft_s$fitIndices[,1], sft_s$fitIndices[,5], labels=powers, cex=cex1,col="red")
+plot(x, y1, xlab= xlab, ylab= ylab1, type="n", main = paste("Scale independence"))
+text(x, y1, labels=powers, cex=cex1, col="red")
+abline(h=Rcutoff, col="red")
+
+plot(x, y2, xlab=xlab, ylab=ylab2, type="n", main = ylab2)
+text(x, y2, labels=powers, cex=cex1, col="red")
 invisible(dev.off())
-#####
+
 #PARAMETERS
 #set the soft threshold parameter at 12 as it is the lowest at which
 #we obtain a R^2 of 0.9
 sft_power <- 12
-#Set minimum module size
-minMod <- 15
+
 
 #Build network in automatic way
 #####
 net <- blockwiseModules(datExpr, networkType = 'signed', minModuleSize = minMod,
                           TOMType = 'signed', power = 12, randomSeed = 1,
                           numericLabels = T, verbose = 5)
+
+moduleColors <- labels2colors(net$colors)
+geneTree <- net$dendrograms[[1]]
 #Plot
-tiff(file = "MyResults_WGCNA/cluster_dendo_auto_min15.tiff")
-mergedColors <- labels2colors(net$colors)
-plotDendroAndColors(net$dendrograms[[1]], mergedColors[net$blockGenes[[1]]],
+tiff(file = autodendroF)
+blocks <- moduleColors[net$blockGenes[[1]]]
+plotDendroAndColors(geneTree, blocks,
                     "Module colors",
                     dendroLabels = FALSE, hang = 0.03,
                     addGuide = TRUE, guideHang = 0.05)
 invisible(dev.off())
 #save results
 moduleLabels <- net$colors
-moduleColors <- labels2colors(net$colors)
 MEs <- net$MEs
-geneTree <- net$dendrograms[[1]]
 save(MEs, moduleLabels, moduleColors, geneTree,
      file = "MyResults_WGCNA/network_auto.RData")
 #####
