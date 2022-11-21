@@ -10,6 +10,7 @@ suppressPackageStartupMessages({
 })
 options(stringsAsFactors = FALSE)
 enableWGCNAThreads()
+covs <- T
 
 #Paths to files
 workingD <- rstudioapi::getActiveDocumentContext()$path
@@ -17,7 +18,7 @@ setwd(dirname(workingD))
 
 #Input
 inputC <- 'configfile.txt'
-inputTSV <- 'resultsDEG/counts_raw.tsv'
+inputTSV <- 'resultsDGE/counts_raw.tsv'
 
 #Outputs
 resD <- 'resultsWGCNA/'
@@ -45,7 +46,8 @@ rm(keep) #Remove because big size
 #Get a DeSeq object
 dds <- DESeqDataSetFromMatrix(countData = df, colData = sampleTable, 
                               design = ~ age + gender + PED + condition)
-#Remove effect of covariates
+#Remove effect of covariates if covs is TRUE
+if(covs){
 dds_norm <- vst(dds, blind = FALSE)
 df_norm <- assay(dds_norm)
 mm <- model.matrix(~condition, colData(dds_norm))
@@ -53,6 +55,11 @@ df_norm <- limma::removeBatchEffect(df_norm,
                                     batch=dds_norm$PED, batch2=dds_norm$gender,
                                     batch3=dds_norm$age, design=mm)
 datExpr <- as.data.frame(t(df_norm))
+} else {
+  dds_norm <- vst(dds, blind = FALSE)
+  df_norm <- assay(dds_norm)
+  datExpr <- as.data.frame(t(df_norm))
+}
 
 #Quality control
 #Remove genes and samples with many missing values
@@ -81,3 +88,4 @@ invisible(dev.off())
 
 #save relevant objects
 save(datExpr, sampleTable, file = finalresults)
+

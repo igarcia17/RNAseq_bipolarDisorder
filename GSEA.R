@@ -14,7 +14,7 @@ suppressPackageStartupMessages({
 workingD <- rstudioapi::getActiveDocumentContext()$path
 setwd(dirname(workingD))
 #Input
-input <- 'resultsDEG/all_genes.tsv'
+input <- 'resultsDGE/all_genes.tsv'
 #Outputs
 resD <- 'resultsGSEA/'
 resTSV <- paste0(resD,'GSEA_results.txt')
