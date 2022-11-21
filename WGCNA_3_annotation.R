@@ -25,7 +25,7 @@ load(inputNet)
 
 modtraitF <- paste0(filesD, "Module-trait_relation.pdf")
 intramodFpref <- paste0(filesD, 'intramodular_')
-
+geneInfoF <- paste0(filesD, 'genes_info.tsv')
 #Parameters
 nSamples <- nrow(datExpr)
 alpha <- 0.01
@@ -45,9 +45,9 @@ levels(sampleTable)[2] <- 'age_stage'
 #Probar añadiendo una columna con las edades reales
 
 #Calculate correlations and p values taking into account # observations
-cp <- corAndPvalue(MEs, sampleTable)
-moduleTraitCor <- cp$cor
-moduleTraitPvalue <- cp$p
+moduleTrait <- corAndPvalue(MEs, sampleTable)
+moduleTraitCor <- moduleTrait$cor
+moduleTraitPvalue <- moduleTrait$p
 
 #Get all together:
 textMatrix <- paste(signif(moduleTraitCor, 2), "\n(",
@@ -72,32 +72,35 @@ names(condition) <- 'condition'
 moduleNames <- substring(names(MEs), 3) #3 to take away prefix
 
 #correlation of each gene in each sample to each module
-geneModuleMembership <- as.data.frame(cor(datExpr, MEs, use = "p")) #not the same as moduleTraitCor
+modMemb <- corAndPvalue(datExpr, MEs)
+geneModuleMembership <- modMemb$cor
+geneModuleMembership <- as.data.frame(geneModuleMembership)
 names(geneModuleMembership) <- paste("MM", moduleNames, sep="_")
 
-#p value of last correlation
-MMPvalue <- as.data.frame(corPvalueStudent(as.matrix(geneModuleMembership), nSamples))
+MMPvalue <- modMemb$p
+MMPvalue <- as.data.frame(MMPvalue)
 names(MMPvalue) <- paste("p_MM", moduleNames, sep="_")
 
-#correlation of each gene to each condition
-geneTraitSignificance <- as.data.frame(cor(datExpr, condition, use = "p"))
+#correlation of each gene to each condition, thus, gene significance
+geneSignif <- corAndPvalue(datExpr, condition)
+geneTraitSignificance <- geneSignif$cor
+geneTraitSignificance <- as.data.frame(geneTraitSignificance)
 names(geneTraitSignificance) <- paste("GS.", names(condition), sep="")
 
-#p values of last correlation
-GSPvalue <- as.data.frame(corPvalueStudent(as.matrix(geneTraitSignificance), nSamples))
+GSPvalue <- geneSignif$p
+GSPvalue <- as.data.frame(GSPvalue)
 names(GSPvalue) <- paste("p.GS.", names(condition), sep="")
 
 #C) Intramodular analysis
 
 #First get significant modules
-modTraitP_df <- as.data.frame(moduleTraitPvalue)
-sigMods <- filter(modTraitP_df, modTraitP_df$is.Affected < alpha)
+moduleTraitPvalue <- as.data.frame(moduleTraitPvalue)
+sigMods <- filter(moduleTraitPvalue, moduleTraitPvalue$is.Affected < alpha)
 sigMods <- substring(rownames(sigMods), 3)
 
 #Plot significance of each gene in every significant module
 # against their correlation to the module.
-for (i in sigMods){
-  mod <- i
+for (mod in sigMods){
   column <- match(mod, moduleNames)
   moduleGenes <- moduleColors==mod
   
@@ -114,7 +117,7 @@ for (i in sigMods){
   invisible(dev.off())
 }
 
-#3.4 Summary output
+#D) Summary output
 #Gene information data frame
 genes <- names(datExpr)
 symbol <- mapIds(org.Hs.eg.db, keys = genes, column = 'SYMBOL', 
@@ -122,11 +125,24 @@ symbol <- mapIds(org.Hs.eg.db, keys = genes, column = 'SYMBOL',
 geneInfo <- data.frame(geneSymbol = symbol, moduleColor = moduleColors, 
                         geneTraitSignificance, GSPvalue)
 # Order modules by their significance for the condition
-modOrder <- order(-abs(cor(MEs, condition, use = "p")))
+eigengeneTraitCorrelation <- WGCNA::cor(MEs, condition, method = "p")
+modOrder <- order(-abs(eigengeneTraitCorrelation))
 
-#Relate to DEGs
+# Add module membership information in the chosen order
+for (mod in 1:ncol(geneModuleMembership)) {
+  oldNames <- names(geneInfo)
+  geneInfo <- data.frame(geneInfo, 
+                         geneModuleMembership[, modOrder[mod]],
+                         MMPvalue[, modOrder[mod]])
+  modMem <- paste0("MM.", moduleNames[modOrder[mod]])
+  pModMem <- paste0("p.MM.", moduleNames[modOrder[mod]])
+  names(geneInfo) <- c(oldNames, modMem,pModMem)
+}
 
+# Order the genes in the geneInfo variable first by module color, 
+#then by geneTraitSignificance
+geneOrder <- order(geneInfo$moduleColor, -abs(geneInfo$GS.condition))
+geneInfo <- geneInfo[geneOrder, ]
 
-#4. Interfacing network analysis with other data such as functional annotation and gene ontology
-
-#5. Network visualization using WGCNA functions
+write.table(geneInfo, file = geneInfoF, sep = "\t", row.names = T, col.names = NA,
+            quote = F)

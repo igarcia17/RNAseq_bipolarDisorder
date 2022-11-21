@@ -91,12 +91,13 @@ uniq <- as.character(unique(names(dat)))
 func_top <- egs$Description[1:topCat]
 #Make sparse matrix with 1 for every gene in each category
 mat <- matrix(0L, nrow = length(uniq), ncol = length(func_top)) 
-for (i in 1:length(uniq)) {
-  for (j in 1:length(func_top)) {
-    gen <- uniq[i]
-    if (gen %in% list_top[[j]]) {
-      mat[i,j] =  1
-}}} 
+for (gene in 1:length(uniq)) {
+  for (func in 1:length(func_top)) {
+    gen <- uniq[gene]
+    if (gen %in% list_top[[func]]) {
+      mat[gene,func] =  1
+    }}} 
+
 #Make a data frame
 mat_df <- as.data.frame(mat)
 colnames(mat_df) <- func_top
