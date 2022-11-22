@@ -26,6 +26,8 @@ load(inputNet)
 modtraitF <- paste0(filesD, "Module-trait_relation.pdf")
 intramodFpref <- paste0(filesD, 'intramodular_')
 geneInfoF <- paste0(filesD, 'genes_info.tsv')
+finalresR <- paste0(filesD, 'summary_sigMods.RData')
+
 #Parameters
 nSamples <- nrow(datExpr)
 alpha <- 0.01
@@ -146,3 +148,5 @@ geneInfo <- geneInfo[geneOrder, ]
 
 write.table(geneInfo, file = geneInfoF, sep = "\t", row.names = T, col.names = NA,
             quote = F)
+
+save(geneInfo, sigMods, file = finalresR)
