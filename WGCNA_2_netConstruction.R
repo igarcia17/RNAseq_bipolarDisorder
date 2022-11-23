@@ -35,6 +35,7 @@ signedSFTF <- paste0(filesD,"softT_signed.tiff")
 autodendroF <- paste0(filesD,"cluster_dendro_auto_min", minMod, ".tiff")
 autoR <- paste0(filesD, "network_auto.RData")
 tempRdata <- paste0(filesD, 'tom_dissTom_geneTree.RData')
+geneTree1F <- paste0(filesD, 'Preliminar_gene_clustering.pdf')
 clustermodsF <- paste0(filesD, 'Clustering_of_modules.pdf')
 dendroF <- paste0(filesD, 'Gene_dendrogram.pdf')
 resultsR <- paste0(filesD, 'network_manual_construction.RData')
@@ -108,6 +109,7 @@ geneTree <- hclust(as.dist(diss_tom), method = 'average')
 title <- 'Gene clustering on TOM-based dissimilarity'
 plot(geneTree, xlab = '', sub = '', main = title, labels = F, hang = 0.04)
 
+
 #Save this objects, as running previous commands is very computationally expensive
 #save(tom, diss_tom, geneTree, file = tempRdata)
 #load(file=tempRdata)
@@ -118,9 +120,10 @@ dynamicMods <- cutreeDynamic(geneTree, distM = diss_tom, deepSplit =2,
 table(dynamicMods)
 dynColors <- labels2colors(dynamicMods)
 title <- 'Gene dendrogram and module colors'
+pdf(geneTree1F)
 plotDendroAndColors(geneTree, dynColors, 'Dynamic Tree Cut', dendroLabels = F, 
                     hang=0.03, addGuide = T, guideHang = 0.05, main = title)
-
+invisible(dev.off())
 #Merge modules with similar expression profile
 MEList <- moduleEigengenes(datExpr, colors = dynColors)
 MEs <-MEList$eigengenes

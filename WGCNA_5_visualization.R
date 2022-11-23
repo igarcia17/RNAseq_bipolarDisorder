@@ -18,7 +18,10 @@ inputNet <- paste0(filesD, 'network_manual_construction.RData')
 load(inputData)
 load(inputNet)
 
-plotTOMF <- paste0(filesD, 'TOM heatmap.pdf')
+plotTOMF <- paste0(filesD, 'TOM heatmap.tiff')
+dendroEigenF <- paste0(filesD, 'Eigengene network dendrogram.tiff')
+heatEigenF <- paste0(filesD, 'Eigengene network heatmap.tiff')
+
 sft_power <- 12
 enhance_power <- 5
 
@@ -30,15 +33,31 @@ plotTOM <- dissTOM^enhance_power
 diag(plotTOM) <- NA
 
 tiff(file = plotTOMF)
-TOMplot(plotTOM, geneTree, moduleColors, main = "Network heatmap plot, all genes")
+title <- "Network heatmap plot, all genes"
+TOMplot(plotTOM, geneTree, moduleColors, main = title)
 invisible(dev.off())
-save(plotTOM, file = paste0(filesD, 'temp.RData'))
+#save(plotTOM, file = paste0(filesD, 'temp.RData'))
+
 #Vizualize eigengene network
 MEs <- moduleEigengenes(datExpr, moduleColors)$eigengenes
 condition <- as.data.frame(sampleTable$condition)
 names(condition) <- 'condition'
+df <- cbind(MEs, condition)
+levels(df$condition) <- c(1,0) #categorical to binary
 
-MET <- orderMEs(MEs, condition)
-par(cex = 0.9)
-plotEigengeneNetworks(MET, '', marDendro= c(0,4,1,2), marHeatmap = c(3,4,1,2), 
-                      cex.lab= 0.8, xLabelsAngle = 90)
+MET <- orderMEs(df)
+#Eigengene network dendrogram
+tiff(filename = dendroEigenF)
+title <- "Eigengene dendrogram"
+plotEigengeneNetworks(MET, title, marDendro = c(0,4,2,0),
+                      plotHeatmaps = FALSE)
+invisible(dev.off())
+
+#Eigengene network heatmap
+tiff(filename = heatEigenF)
+title <- "Eigengene adjacency heatmap"
+plotEigengeneNetworks(MET, "Eigengene adjacency heatmap", marHeatmap = c(3,4,2,2),
+                      plotDendrograms = FALSE, xLabelsAngle = 90)
+invisible(dev.off())
+
+
