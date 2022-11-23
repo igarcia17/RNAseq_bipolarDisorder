@@ -17,7 +17,7 @@ enableWGCNAThreads()
 workingD <- rstudioapi::getActiveDocumentContext()$path
 setwd(dirname(workingD))
 
-filesD <- 'resultsWGCNA/'
+filesD <- 'results_WGCNA/'
 inputData <- paste0(filesD,'initialData_datExpr_sampleTable.RData')
 inputNet <- paste0(filesD, 'network_manual_construction.RData')
 load(inputData)
@@ -30,7 +30,7 @@ finalresR <- paste0(filesD, 'summary_sigMods.RData')
 
 #Parameters
 nSamples <- nrow(datExpr)
-alpha <- 0.01
+alpha <- 0.05
 
 #A) Quantify module trait associations
 

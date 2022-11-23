@@ -23,6 +23,8 @@ load(inputData)
 load(inputNet)
 load(inputSigMods)
 
+vennF <- paste0(filesD, 'common_modules_fromWGCNA_DEGs.tiff')
+
 #Relate to previous DEG results
 resDGE <- read.table(file = inputSigGenes, sep = '\t', header = TRUE, row.names=1)
 resDGE <- resDGE[order(row.names(resDGE)),]
@@ -35,14 +37,18 @@ DEGinfo <- DEGinfo[order(row.names(DEGinfo)),]
 missingGenes <- setdiff(DEGs, rownames(DEGinfo))
 missGenesDGEs <- filter(resDGE, rownames(resDGE) %in% missingGenes)
 #Looking at baseMean, we can see that they have probably been filtered out for the 
-#WGCNA because of low counts.
+#WGCNA because of low counts, or because they are not significant enough
 
+DEGmods_list <- unique(DEGinfo$moduleColor)
+DEGmods_table <- table(DEGinfo$moduleColor)
+#What percentage of DEGS are in a significant module?
 
-#Relate to DEGs
+#Pie chart, DEGs in module out of sigMods are in separate cathegory
 
-#Load significant genes, make it a list
-#relate the significant genes to their associated color
-#Graph, like a pie
-
-
-
+#What significant modules appear in the DEGs? Venn diagram
+library(VennDiagram)
+venn.diagram(x = list(DEGmods_list, sigMods), category.names = 
+               c('Modules of significant genes', 'Significant modules'),
+             filename = vennF)
+USING GGVEN PACKAGE
+https://stackoverflow.com/questions/25019794/venn-diagram-with-item-labels
