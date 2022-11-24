@@ -7,7 +7,8 @@ suppressPackageStartupMessages({
   library(dplyr, quietly = T)
   library(ggplot2, quietly = T)
   library(WGCNA, quietly = T)
-  library(org.Hs.eg.db, quietly = T)
+  #library(org.Hs.eg.db, quietly = T)
+  library(anRichment)
 })
 
 options(stringsAsFactors = FALSE)
@@ -24,9 +25,11 @@ load(inputData)
 load(inputNet)
 
 modtraitF <- paste0(filesD, "Module-trait_relation.pdf")
-intramodFpref <- paste0(filesD, 'intramodular_')
+intramodFpref <- paste0(filesD, 'MMandGS/intramodular_')
 geneInfoF <- paste0(filesD, 'genes_info.tsv')
 finalresR <- paste0(filesD, 'summary_sigMods.RData')
+gNumberF <- paste0(filesD, 'genes_in_significant_modules.txt')
+allGenesListF <- paste0(filesD, 'genes_in_modules/all_modules_entrez.txt')
 
 #Parameters
 nSamples <- nrow(datExpr)
@@ -120,6 +123,17 @@ for (mod in sigMods){
 }
 
 #D) Summary output
+#Save the genes present in each significant module
+for (mod in sigMods){
+  modGenes <- (moduleColors==mod)
+  modGenes <- symbol[modGenes]
+  filename <- paste(filesD,"genes_in_modules/genes-", mod, ".txt", sep="");
+  write.table(as.data.frame(modGenes), file = filename, quote = F,
+              row.names = FALSE, col.names = FALSE)
+  geneNumber <- length(modGenes)
+  line <- paste0('Module ', mod, ': ', geneNumber)
+  write(line, file = gNumberF, append = T)
+}
 #Gene information data frame
 genes <- names(datExpr)
 symbol <- mapIds(org.Hs.eg.db, keys = genes, column = 'SYMBOL', 
@@ -149,4 +163,37 @@ geneInfo <- geneInfo[geneOrder, ]
 write.table(geneInfo, file = geneInfoF, sep = "\t", row.names = T, col.names = NA,
             quote = F)
 
+
+###ANNOTATION
+#Save the genes present in each significant module, but this time in EntrezID
+entrez <- mapIds(org.Hs.eg.db, keys = genes, column = 'ENTREZID', keytype = 'ENSEMBL', 
+                 multiVals = 'first')
+for (mod in sigMods){
+  modGenes <- (moduleColors==mod)
+  modGenes <- entrez[modGenes]
+  filename <- paste(filesD,"genes_in_modules/genes-Entrez-", mod, ".txt", sep="");
+  write.table(as.data.frame(modGenes), file = filename, quote = F,
+              row.names = FALSE, col.names = FALSE)
+}
+#Save the rest of the genes as background for the analysis
+write.table(as.data.frame(entrez), file = allGenesListF,quote = F, row.names=F,
+            col.names=F)
+
+#Enrichment GO analysis using WGCNA functions
+GOcollection <- buildGOcollection(organism = "human")
+for (mod in sigMods){
+  active <- entrez[moduleColors==mod]
+  enrichmnt <- enrichmentAnalysis(active = active, inactive = entrez,
+                                           refCollection = GOcollection,
+                                           useBackground = "intersection",
+                                           threshold = 1e-4,
+                                           thresholdType = "Bonferroni");
+  enr_table <- enrichmnt$enrichmentTable
+  terms <- enr_table$dataSetName
+  filename <- paste0(filesD,"enriched_terms/terms_", mod, ".txt")
+  write.table(as.data.frame(terms), file = filename, quote = F,
+              row.names = FALSE, col.names = FALSE)
+}
+
+#Save general summary results for farther experiments
 save(geneInfo, sigMods, file = finalresR)

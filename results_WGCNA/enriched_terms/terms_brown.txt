@@ -1,0 +1,13 @@
+ribosome biogenesis
+ribonucleoprotein complex biogenesis
+rRNA processing
+ncRNA metabolic process
+rRNA metabolic process
+ncRNA processing
+RNA binding
+preribosome
+RNA processing
+nucleolus
+small-subunit processome
+nucleic acid binding
+ribosomal large subunit biogenesis

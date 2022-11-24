@@ -1,0 +1,19 @@
+cellular amino acid metabolic process
+amino acid import across plasma membrane
+amino acid import
+carboxylic acid metabolic process
+oxoacid metabolic process
+organic acid metabolic process
+L-amino acid transmembrane transporter activity
+L-alpha-amino acid transmembrane transport
+organonitrogen compound biosynthetic process
+peptide biosynthetic process
+L-serine metabolic process
+amino acid transmembrane transporter activity
+neutral amino acid transmembrane transporter activity
+amino acid transmembrane transport
+cellular amide metabolic process
+serine family amino acid metabolic process
+amide biosynthetic process
+peptide metabolic process
+serine family amino acid biosynthetic process
