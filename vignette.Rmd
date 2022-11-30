@@ -10,7 +10,7 @@ bibliography: references.bib
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-The purpose of this vignette is to complement, describe and explain the scripts created for my master thesis project, in which RNAseq data from 31 different individuals undergo different analyses.
+The purpose of this vignette is to complement, describe and explain the scripts created for my master thesis project, in which RNAseq data from 31 different individuals undergoes different analyses.
 
 # How does the data look?
 
@@ -295,7 +295,7 @@ setwd(dirname(workingD))
 #Input
 configFile <- 'configfile.txt'
 #Outputs
-resD <- 'resultsDGE/'
+resD <- 'results_DGE/'
 rawCountsF <- paste0(resD,"counts_raw.tsv")
 normCountsF <- paste0(resD,"counts_normalized.tsv")
 PCAF <- paste0(resD,"PCA.tiff")
@@ -531,6 +531,7 @@ invisible(dev.off())
 ![Figure X: Volcano plot](results_DGE/volcanoPlot.jpeg)
 
 For the heatmap we create a new object that only and just has the genes of interest:
+
 ```{r eval = FALSE}
 significant001 <- significant[significant$padj < 0.01,]
 #Extract from the normalized counts table the data from the significant genes
@@ -538,14 +539,18 @@ subcounts <- subset(dds_normalized, rownames(dds_normalized) %in%
                       rownames(significant001))
 lsubcounts <- log2(subcounts+1) #added pseudocount 1
 ```
+
 Set the variables for the plot:
+
 ```{r eval = FALSE}
 sig_symbol <- as.character(significant001$symbol)
 conditions <- c(l1, l2)
 conds <- subset(sampleTable, sampleTable$condition %in% conditions)
 samples <- conds$sample
 ```
+
 To plot the heatmap:
+
 ```{r eval = FALSE}
 df <- data.frame(condition=conds$condition)
 rownames(df) <- samples
@@ -561,14 +566,209 @@ pheatmap(lsubcounts, scale= 'row', cluster_rows = TRUE,
          treeheight_row = 30, treeheight_col = 20)
 invisible(dev.off())
 ```
-![Figure X: Heat map of most significant genes](results_DGE/heatmap.jpeg)
-Though these genes show distinct patterns of expression in the different conditions, there are cases in which there may be, for instance, underexpression in affected and unaffected individuals: this is because their genetic background is shared and may be similar though one of them does develop the disease but not the other.
+
+![Figure X: Heat map of most significant genes](results_DGE/heatmap.jpeg) Though these genes show distinct patterns of expression in the different conditions, there are cases in which there may be, for instance, underexpression in affected and unaffected individuals: this is because their genetic background is shared and may be similar though one of them does develop the disease but not the other.
 
 ## Gene Set Enrichment Analysis
 
+The Gene Set Enrichment Analysis (GSEA) doesn't looks if predefined sets of genes show a different pattern of expression[@subramanian2005]. The genes can be divided in sets according to their chromosomal location, cellular location of product, or as in this case, their function. I decided to use the Gene Ontology sets, focus on Molecular Process, which would give a rather simplified result [@liberzon2011]. This script is based in the one of the Genomics unit at CBMSO, from Eva Sacristán and Sandra González.
 
+The first step is to call the libraries[@clusterProfiler; @msigdbr; @UpSetR; @enrichplot]:
+
+```{r}
+suppressPackageStartupMessages({
+  library(rstudioapi)
+  library(clusterProfiler, quietly = TRUE)
+  library(msigdbr, quietly = T)
+  library(UpSetR, quietly = TRUE)
+  library(enrichplot, quietly = TRUE)
+  library(ggplot2)
+})
+```
+
+We declare the input and output files:
+
+```{r eval = FALSE}
+#Input
+input <- 'results_DGE/all_genes.tsv'
+#Outputs
+resD <- 'results_GSEA/GO_BP'
+resTSV <- paste0(resD,'GSEA_results.txt')
+dotplotF <- paste0(resD, "dotplot.jpeg")
+geneconceptF <- paste0(resD,"gene_concept_net.jpeg")
+ridgeF <- paste0(resD,"GSEA_ridge.jpeg")
+upsetF <- paste0(resD,"upset_plot.jpeg")
+gseaplotsF <- paste0(resD,'all_gseaplots.jpeg')
+
+```
+
+Now let's set up the parameters
+
+```{r eval = TRUE}
+#Which database from msigdbr?
+category <- 'C5'
+subcategory <- 'GO:BP'
+#Plot the x top categories
+topCat <- 5
+```
+
+The 'hallmark' category in the mSigDB doesn't have any subcategories. We load the data:
+
+```{r eval = FALSE}
+data <- read.delim(input, sep= "\t", header=T, row.names = 1)
+dat <- data$log2FoldChange
+names(dat) <- as.character(rownames(data))
+dat <- sort(dat, decreasing=TRUE)
+```
+
+In the data object *dat*, the row names are the genes, in their Ensembl ID, and only has other column, the log2fold change, which serves as measure of difference of expression. To further proceed, we request to get the data base sets in a local object:
+
+```{r}
+db_sets <- msigdbr(species = 'Homo sapiens', category = category, 
+                   subcategory = subcategory)%>% 
+  dplyr::select(gs_name, ensembl_gene)
+head(db_sets)
+```
+
+Then the GSEA as it is is performed and saved.
+
+```{r eval = FALSE}
+set.seed(1)
+egs <- GSEA(geneList = dat, pvalueCutoff = 0.05, eps = 0, pAdjustMethod = "BH", 
+            seed = T, TERM2GENE = db_sets)
+egs_df <- data.frame(egs@result)
+egs_df <- egs_df[, -c(1,2)]
+write.table(egs_df, file = resTSV, sep= "\t", quote = F, row.names = T)
+```
+
+Now that we have the results we can recalculate the *topCat* parameter: it is used to plot the top categories from the results, but in some cases there are less categories than expected. For a smooth run, it is better to evaluate this.
+
+```{r eval = FALSE}
+if (dim(egs_df)[1] < topCat){
+  topCat <- dim(egs_df)[1]}
+
+```
+
+We can proceed to plot the results:
+
+```{r eval=FALSE}
+##Dotplot
+jpeg(file = dotplotF, units = 'in', width = 15, height = 10, 
+     res = 300)
+par(mar = c(2, 2, 2, 5)) 
+title <- 'Dot plot with GSEA categories'
+dotplot(egs, x = "GeneRatio", color = "p.adjust", showCategory = 20, 
+            font.size = 15, title = title)
+invisible(dev.off())
+```
+
+![Figure X: dot plot with GSEA categories](results_GSEA/GO_BP/dotplot.jpeg) This dot plot shows ...
+
+```{r eval = FALSE}
+##Gene-concept network
+jpeg(file = geneconceptF, units = 'in', 
+     width = 15, height = 10, res = 300)
+par(mar = c(2, 2, 2, 5)) 
+cnetplot(egs, categorySize="p.adjust", font.size = 15, colorEdge = T)
+invisible(dev.off())
+```
+
+![Figure X: Gene concept network graph](results_GSEA/GO_BP/gene_concept_net.jpeg) This plot shows....
+
+```{r eval = FALSE}
+##Ridge line plot
+jpeg(file = ridgeF, units = 'in', width = 15, height = 10, res = 300)
+par(mar = c(2, 2, 2, 5)) 
+ridgeplot(egs, fill="p.adjust", orderBy= 'NES', core_enrichment = T)
+invisible(dev.off())
+```
+
+![Figure X: Ridge plot of GSEA categories](results_GSEA/GO_BP/GSEA_ridge.jpeg) This plots shows ....
+
+For the next visualization figures, it is necessary to design a list with each category that stores their belonging genes.
+
+```{r eval = FALSE}
+genes_top <- as.data.frame(as.factor(head(egs@result$core_enrichment, topCat)))
+list_top <- list()
+for (i in 1:topCat) {
+    list_top[[i]] <- unlist(strsplit(as.character(genes_top[i,1]),split="/"))   
+}
+#Store all unique gene IDs
+uniq <- as.character(unique(names(dat)))
+#Get top functions
+func_top <- egs$Description[1:topCat]
+#Make sparse matrix with 1 for every gene in each category
+mat <- matrix(0L, nrow = length(uniq), ncol = length(func_top)) 
+for (gene in 1:length(uniq)) {
+  for (func in 1:length(func_top)) {
+    gen <- uniq[gene]
+    if (gen %in% list_top[[func]]) {
+      mat[gene,func] =  1
+    }}} 
+#Make a data frame
+mat_df <- as.data.frame(mat)
+colnames(mat_df) <- func_top
+row.names(mat_df) <- uniq
+```
+
+With this data frame prepared, we can do the upset plot and the GSEA plots:
+
+```{r eval = FALSE}
+jpeg(file = upsetF, units = 'in', width = 15, height = 10, res = 300)
+upset(mat_df, nsets=10, order.by="freq", sets.bar.color="skyblue")
+invisible(dev.off())
+```
+
+![Figure X: Upset plot](results_GSEA/GO_BP/upset_plot.jpeg) This plot shows...
+
+```{r eval = FALSE}
+for (j in 1:numPlots){
+  pl <- gseaplot2(egs, geneSetID=j, title = egs$Description[j], base_size=40, color="red")
+  desc <- gsub(" ", "_", egs$Description[j], fixed = TRUE) 
+  filename <- paste0(resD, desc, ".jpeg")
+  ggsave(pl, file=filename, device = "jpeg", units= "in", height = 15, width = 20)
+}
+```
+
+![Figure X: category \_ GSEA plot](results_GSEA/GO_BP/GOBP_ADAPTIVE_IMMUNE_RESPONSE_BASED_ON_SOMATIC_RECOMBINATION_OF_IMMUNE_RECEPTORS_BUILT_FROM_IMMUNOGLOBULIN_SUPERFAMILY_DOMAINS.jpeg) ![Figure X: category \_ GSEA plot](results_GSEA/GO_BP/GOBP_IMMUNOGLOBULIN_PRODUCTION.jpeg)
+
+![Figure X: category \_ GSEA plot](results_GSEA/GO_BP/GOBP_NEGATIVE_REGULATION_OF_DNA_BINDING.jpeg)
+
+![Figure X: category \_ GSEA plot](results_GSEA/GO_BP/GOBP_PRODUCTION_OF_MOLECULAR_MEDIATOR_OF_IMMUNE_RESPONSE.jpeg)
+
+These plots show.... We can fuse all this plots together by:
+
+```{r eval = FALSE}
+gseap <- gseaplot2(egs, geneSetID = 1:topCat, pvalue_table = F)
+ggsave(gseap, file=gseaplotsF, device = "jpeg", units= "in", 
+       height = 15, width = 20)
+```
+
+![Figure X: category \_ GSEA plot](results_GSEA/GO_BP/all_gseaplots.jpeg)
 
 # Weighted Gene Coexpression Network Analysis
+
+The Weighted Gene Coexpression Network Analysis (WGCNA) is... [@langfelder2008]I have divided the scripts in five parts for simplicity reasons. They are based on the WGCNA tutorials made by Peter Langfelder and Steve Horvarth [@langfelderhorvarth2008].
+
+## Part 1: Data preparation
+
+dd
+
+## Part 2: Network construction
+
+dd
+
+## Part 3: module membership and gene significance
+
+ss
+
+## Part 4: comparison with DGE
+
+dd
+
+## Part 5: Visualization
+
+ss
 
 # References
 

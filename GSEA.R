@@ -14,9 +14,9 @@ suppressPackageStartupMessages({
 workingD <- rstudioapi::getActiveDocumentContext()$path
 setwd(dirname(workingD))
 #Input
-input <- 'resultsDGE/all_genes.tsv'
+input <- 'results_DGE/all_genes.tsv'
 #Outputs
-resD <- 'resultsGSEA/'
+resD <- 'results_GSEA/GO_BP/'
 resTSV <- paste0(resD,'GSEA_results.txt')
 dotplotF <- paste0(resD, "dotplot.jpeg")
 geneconceptF <- paste0(resD,"gene_concept_net.jpeg")
@@ -26,14 +26,14 @@ gseaplotsF <- paste0(resD,'all_gseaplots.jpeg')
 
 #Parameters
 #Which database inside msigdbr?
-category <- 'H'
-subcategory <- NULL
+category <- 'C5'
+subcategory <- 'GO:BP'
 #Plot the x top categories
 topCat <- 10
 
 #Load data
 data <- read.delim(input, sep= "\t", header=T, row.names = 1)
-dat <- data$stat #define why use stat
+dat <- data$log2FoldChange
 names(dat) <- as.character(rownames(data))
 dat <- sort(dat, decreasing=TRUE)
 
@@ -42,7 +42,7 @@ dat <- sort(dat, decreasing=TRUE)
 db_sets <- msigdbr(species = 'Homo sapiens', category = category, 
                    subcategory = subcategory)%>% 
   dplyr::select(gs_name, ensembl_gene)
-#head(db_sets) #each gene associated with each msig group
+head(db_sets) #each gene associated with each msig group
 
 #Perform GSEA
 set.seed(1)
@@ -53,6 +53,11 @@ egs_df <- data.frame(egs@result)
 egs_df <- egs_df[, -c(1,2)]
 
 write.table(egs_df, file = resTSV, sep= "\t", quote = F, row.names = T)
+
+#Reconsider the top category number if there are less terms than especified
+if (dim(egs_df)[1] < topCat){
+  topCat <- dim(egs_df)[1]
+}
 
 #Plot the results
 ##Dotplot
@@ -108,8 +113,9 @@ jpeg(file = upsetF, units = 'in', width = 15, height = 10, res = 300)
 upset(mat_df, nsets=10, order.by="freq", sets.bar.color="skyblue")
 invisible(dev.off())
 
-###Plot the first 5 more abundant terms
-for (j in 1:5){
+###Plot the first 5 more abundant terms or all if there are less hits
+
+for (j in 1:numPlots){
   pl <- gseaplot2(egs, geneSetID=j, title = egs$Description[j], base_size=40, color="red")
   desc <- gsub(" ", "_", egs$Description[j], fixed = TRUE) 
   filename <- paste0(resD, desc, ".jpeg")
