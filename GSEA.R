@@ -70,8 +70,7 @@ dotplot(egs, x = "GeneRatio", color = "p.adjust", showCategory = 20,
 invisible(dev.off())
 
 ##Gene-concept network
-jpeg(file = geneconceptF, units = 'in', 
-     width = 15, height = 10, res = 300)
+jpeg(file = geneconceptF, units = 'in', width = 15, height = 10, res = 300)
 par(mar = c(2, 2, 2, 5)) 
 cnetplot(egs, categorySize="p.adjust", font.size = 15, colorEdge = T)
 invisible(dev.off())

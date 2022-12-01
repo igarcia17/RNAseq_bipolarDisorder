@@ -646,10 +646,9 @@ Now that we have the results we can recalculate the *topCat* parameter: it is us
 ```{r eval = FALSE}
 if (dim(egs_df)[1] < topCat){
   topCat <- dim(egs_df)[1]}
-
 ```
 
-We can proceed to plot the results:
+We can proceed to plot the results. To further understand them, it is necessary to define the **gene ratio**: it is the percentage of total DEGs related to the catagory present for the total of genes in the given term $geneRatio = CoreEnrichmentGenes / PathwayGenes$. For example, if there are 1000 genes in a GO term, and 13 significant differentially expressed on the sample regarding this term, the gene ratio would be 1.3[@yulab2021].
 
 ```{r eval=FALSE}
 ##Dotplot
@@ -662,7 +661,8 @@ dotplot(egs, x = "GeneRatio", color = "p.adjust", showCategory = 20,
 invisible(dev.off())
 ```
 
-![Figure X: dot plot with GSEA categories](results_GSEA/GO_BP/dotplot.jpeg) This dot plot shows ...
+![Figure X: dot plot with GSEA categories](results_GSEA/GO_BP/dotplot.jpeg) 
+This dot plot shows the fours significant categories, ordered by gene ratio. Each dot is colored by adjusted p value, being the category 'immunoglobulin production' the most significant. The size of each dot shows the count of core enrichment genes for that category: the GO term with more significant genes is the one regarding the adaptative response.
 
 ```{r eval = FALSE}
 ##Gene-concept network
@@ -673,7 +673,8 @@ cnetplot(egs, categorySize="p.adjust", font.size = 15, colorEdge = T)
 invisible(dev.off())
 ```
 
-![Figure X: Gene concept network graph](results_GSEA/GO_BP/gene_concept_net.jpeg) This plot shows....
+![Figure X: Gene concept network graph](results_GSEA/GO_BP/gene_concept_net.jpeg) 
+The gene concept network provides information of which genes are in each categories and if they overlap among categories. It is difficult to change their settings and interpret with this nomenclature: the problem is that using a more user friendly nomenclature gets many missing names, and there is loss of information. Fortunately, upset plot says the same and its more friendly.
 
 ```{r eval = FALSE}
 ##Ridge line plot
@@ -683,7 +684,8 @@ ridgeplot(egs, fill="p.adjust", orderBy= 'NES', core_enrichment = T)
 invisible(dev.off())
 ```
 
-![Figure X: Ridge plot of GSEA categories](results_GSEA/GO_BP/GSEA_ridge.jpeg) This plots shows ....
+![Figure X: Ridge plot of GSEA categories](results_GSEA/GO_BP/GSEA_ridge.jpeg) 
+The ridge plot is a density plot of the frequency of log2 fold-change values per enriched gene within each category, and helps visualize if there is over or underexpression of the category function. In this particular case, all of them seem to be downregulated.
 
 For the next visualization figures, it is necessary to design a list with each category that stores their belonging genes.
 
@@ -719,7 +721,8 @@ upset(mat_df, nsets=10, order.by="freq", sets.bar.color="skyblue")
 invisible(dev.off())
 ```
 
-![Figure X: Upset plot](results_GSEA/GO_BP/upset_plot.jpeg) This plot shows...
+![Figure X: Upset plot](results_GSEA/GO_BP/upset_plot.jpeg) 
+The upset plot shows the overlap among the terms, similarly to the gene concept network. The categories are ordered by set size, thus, by how many genes are there in each category. Each column is an intersection or group of genes that go together. For example, the first column shows that 66 genes are only present in the adaptative response category. The second column shows that there are 31 genes overlapping immunoglobulin production and production of molecular mediators. In fact, the category of immunoglobulin production doesn't have any gene that is not present as well in one of the other three categories.
 
 ```{r eval = FALSE}
 for (j in 1:numPlots){
@@ -736,7 +739,8 @@ for (j in 1:numPlots){
 
 ![Figure X: category \_ GSEA plot](results_GSEA/GO_BP/GOBP_PRODUCTION_OF_MOLECULAR_MEDIATOR_OF_IMMUNE_RESPONSE.jpeg)
 
-These plots show.... We can fuse all this plots together by:
+The GSEA plots shows where the hit genes are ordered in the ranked list, compared to the running enrichment score. The four categories show a greater amount of hits with negative enrichment score, showing once again the underexpression.
+We can fuse all this plots together by:
 
 ```{r eval = FALSE}
 gseap <- gseaplot2(egs, geneSetID = 1:topCat, pvalue_table = F)
