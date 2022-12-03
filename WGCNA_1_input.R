@@ -18,11 +18,11 @@ setwd(dirname(workingD))
 
 #Input
 inputC <- 'configfile.txt'
-inputTSV <- 'resultsDGE/counts_raw.tsv'
+inputTSV <- 'results_DGE/counts_raw.tsv'
 
 #Outputs
-resD <- 'resultsWGCNA/'
-samtreeF <- paste0(resD,"sampleClustering.pdf")
+resD <- 'results_WGCNA/'
+samtreeF <- paste0(resD,"sampleClustering.jpeg")
 finalresults <- paste0(resD,'initialData_datExpr_sampleTable.RData')
 
 #Load covariates
@@ -79,8 +79,8 @@ if (!gsg$allOK){
 
 #Cluster to detect outliers in samples
 sampleTree <- hclust(dist(datExpr), method = 'average')
-pdf(file = samtreeF, width = 12, height = 9);
-par(mar = c(0,4,2,0), cex = 0.6)
+jpeg(file = samtreeF, width = 700, height = 700, quality = 300)
+par(mar = c(0,4,2,0))
 title <- "Sample clustering to detect outliers"
 plot(sampleTree, main = title, cex.lab = 1.5, cex.axis = 1.5, cex.main = 2)
 invisible(dev.off())
