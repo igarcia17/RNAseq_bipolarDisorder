@@ -4,17 +4,25 @@ author: "Inés García-Ortiz"
 date: "2022-11-29"
 output: word_document
 bibliography: references.bib
+editor_options: 
+  markdown: 
+    wrap: 72
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-The purpose of this vignette is to complement, describe and explain the scripts created for my master thesis project, in which RNAseq data from 31 different individuals undergoes different analyses.
+The purpose of this vignette is to complement, describe and explain the
+scripts created for my master thesis project, in which RNAseq data from
+31 different individuals undergoes different analyses.
 
 # How does the data look?
 
-We have RNAseq data from 31 different individuals of 8 different families with high number of Bipolar Disorder affected relatives. They have two different IDs: the individual ID present in the databank of the group and the sample ID used for the RNAseq itself.
+We have RNAseq data from 31 different individuals of 8 different
+families with high number of Bipolar Disorder affected relatives. They
+have two different IDs: the individual ID present in the databank of the
+group and the sample ID used for the RNAseq itself.
 
 | Databank ID | RNAseq ID | Condition  | Gender | Age   | Family |
 |-------------|-----------|------------|--------|-------|--------|
@@ -58,7 +66,8 @@ The pedigree family structures is the following:
 
 ## Preprocessing of reads
 
-The original fastq files come in three files for running files, that had to be concatenated.
+The original fastq files come in three files for running files, that had
+to be concatenated.
 
 ```{bash eval = FALSE}
 #!/bin/bash
@@ -74,10 +83,10 @@ do
 	cd ..
 	echo continuing
 done
-
 ```
 
-A first fastQC assay was done, using the program with the same name[@andrews2010]:
+A first fastQC assay was done, using the program with the same
+name[@andrews2010]:
 
 ```{bash eval = FALSE}
 #!/bin/bash
@@ -85,7 +94,9 @@ module load fastqc/0.11.9
 fastqc *fastq -t 20 -o FASTQC
 ```
 
-Though the overall quality of the reads was very good, I decided to trim a little bit the ends using Trimmomatic[@bolger2014]. To generate the commands for each sample the script used was:
+Though the overall quality of the reads was very good, I decided to trim
+a little bit the ends using Trimmomatic[@bolger2014]. To generate the
+commands for each sample the script used was:
 
 ```{bash eval = FALSE}
 #!/bin/bash
@@ -97,48 +108,84 @@ SLIDINGWINDOW:4:20 MINLEN:50 >> trim_cmd;
 done
 ```
 
-The command first has to call to java and declare that it is a paired end (*PE*) experiment. The sliding window (*SLIDINGWINDOW:4:20*) in trimmomatic means that it will scan the read from the 5' end in groups of **4** and when the average quality drops from **20** it will clip it. We will only accept reads with a minimum length (*MINLEN:50*) of 50 basepairs.
+The command first has to call to java and declare that it is a paired
+end (*PE*) experiment. The sliding window (*SLIDINGWINDOW:4:20*) in
+trimmomatic means that it will scan the read from the 5' end in groups
+of **4** and when the average quality drops from **20** it will clip it.
+We will only accept reads with a minimum length (*MINLEN:50*) of 50
+basepairs.
 
 Giving the following whole script:
 
 ```{bash eval = FALSE}
 #!/bin/bash
 module load trimmomatic/0.39
-java -jar /usr/local/trimmomatic/0.39/trimmomatic-0.39.jar PE -threads 20 -phred33 BWH--000_R1.fastq BWH--000_R2.fastq BWH--000_R1_paired.fq.gz BWH--000_R1_unpaired.fq.gz BWH--000_R2_paired.fq.gz BWH--000_R2_unpaired.fq.gz SLIDINGWINDOW:4:20 MINLEN:50
-java -jar /usr/local/trimmomatic/0.39/trimmomatic-0.39.jar PE -threads 20 -phred33 BWH--001_R1.fastq BWH--001_R2.fastq BWH--001_R1_paired.fq.gz BWH--001_R1_unpaired.fq.gz BWH--001_R2_paired.fq.gz BWH--001_R2_unpaired.fq.gz SLIDINGWINDOW:4:20 MINLEN:50
-java -jar /usr/local/trimmomatic/0.39/trimmomatic-0.39.jar PE -threads 20 -phred33 BWH--002_R1.fastq BWH--002_R2.fastq BWH--002_R1_paired.fq.gz BWH--002_R1_unpaired.fq.gz BWH--002_R2_paired.fq.gz BWH--002_R2_unpaired.fq.gz SLIDINGWINDOW:4:20 MINLEN:50
-java -jar /usr/local/trimmomatic/0.39/trimmomatic-0.39.jar PE -threads 20 -phred33 BWH--003_R1.fastq BWH--003_R2.fastq BWH--003_R1_paired.fq.gz BWH--003_R1_unpaired.fq.gz BWH--003_R2_paired.fq.gz BWH--003_R2_unpaired.fq.gz SLIDINGWINDOW:4:20 MINLEN:50
-java -jar /usr/local/trimmomatic/0.39/trimmomatic-0.39.jar PE -threads 20 -phred33 BWH--004_R1.fastq BWH--004_R2.fastq BWH--004_R1_paired.fq.gz BWH--004_R1_unpaired.fq.gz BWH--004_R2_paired.fq.gz BWH--004_R2_unpaired.fq.gz SLIDINGWINDOW:4:20 MINLEN:50
-java -jar /usr/local/trimmomatic/0.39/trimmomatic-0.39.jar PE -threads 20 -phred33 BWH--005_R1.fastq BWH--005_R2.fastq BWH--005_R1_paired.fq.gz BWH--005_R1_unpaired.fq.gz BWH--005_R2_paired.fq.gz BWH--005_R2_unpaired.fq.gz SLIDINGWINDOW:4:20 MINLEN:50
-java -jar /usr/local/trimmomatic/0.39/trimmomatic-0.39.jar PE -threads 20 -phred33 BWH--006_R1.fastq BWH--006_R2.fastq BWH--006_R1_paired.fq.gz BWH--006_R1_unpaired.fq.gz BWH--006_R2_paired.fq.gz BWH--006_R2_unpaired.fq.gz SLIDINGWINDOW:4:20 MINLEN:50
-java -jar /usr/local/trimmomatic/0.39/trimmomatic-0.39.jar PE -threads 20 -phred33 BWH--007_R1.fastq BWH--007_R2.fastq BWH--007_R1_paired.fq.gz BWH--007_R1_unpaired.fq.gz BWH--007_R2_paired.fq.gz BWH--007_R2_unpaired.fq.gz SLIDINGWINDOW:4:20 MINLEN:50
-java -jar /usr/local/trimmomatic/0.39/trimmomatic-0.39.jar PE -threads 20 -phred33 BWH--008_R1.fastq BWH--008_R2.fastq BWH--008_R1_paired.fq.gz BWH--008_R1_unpaired.fq.gz BWH--008_R2_paired.fq.gz BWH--008_R2_unpaired.fq.gz SLIDINGWINDOW:4:20 MINLEN:50
-java -jar /usr/local/trimmomatic/0.39/trimmomatic-0.39.jar PE -threads 20 -phred33 BWH--009_R1.fastq BWH--009_R2.fastq BWH--009_R1_paired.fq.gz BWH--009_R1_unpaired.fq.gz BWH--009_R2_paired.fq.gz BWH--009_R2_unpaired.fq.gz SLIDINGWINDOW:4:20 MINLEN:50
-java -jar /usr/local/trimmomatic/0.39/trimmomatic-0.39.jar PE -threads 20 -phred33 BWH--010_R1.fastq BWH--010_R2.fastq BWH--010_R1_paired.fq.gz BWH--010_R1_unpaired.fq.gz BWH--010_R2_paired.fq.gz BWH--010_R2_unpaired.fq.gz SLIDINGWINDOW:4:20 MINLEN:50
-java -jar /usr/local/trimmomatic/0.39/trimmomatic-0.39.jar PE -threads 20 -phred33 BWH--011_R1.fastq BWH--011_R2.fastq BWH--011_R1_paired.fq.gz BWH--011_R1_unpaired.fq.gz BWH--011_R2_paired.fq.gz BWH--011_R2_unpaired.fq.gz SLIDINGWINDOW:4:20 MINLEN:50
-java -jar /usr/local/trimmomatic/0.39/trimmomatic-0.39.jar PE -threads 20 -phred33 BWH--012_R1.fastq BWH--012_R2.fastq BWH--012_R1_paired.fq.gz BWH--012_R1_unpaired.fq.gz BWH--012_R2_paired.fq.gz BWH--012_R2_unpaired.fq.gz SLIDINGWINDOW:4:20 MINLEN:50
-java -jar /usr/local/trimmomatic/0.39/trimmomatic-0.39.jar PE -threads 20 -phred33 BWH--013_R1.fastq BWH--013_R2.fastq BWH--013_R1_paired.fq.gz BWH--013_R1_unpaired.fq.gz BWH--013_R2_paired.fq.gz BWH--013_R2_unpaired.fq.gz SLIDINGWINDOW:4:20 MINLEN:50
-java -jar /usr/local/trimmomatic/0.39/trimmomatic-0.39.jar PE -threads 20 -phred33 BWH--014_R1.fastq BWH--014_R2.fastq BWH--014_R1_paired.fq.gz BWH--014_R1_unpaired.fq.gz BWH--014_R2_paired.fq.gz BWH--014_R2_unpaired.fq.gz SLIDINGWINDOW:4:20 MINLEN:50
-java -jar /usr/local/trimmomatic/0.39/trimmomatic-0.39.jar PE -threads 20 -phred33 BWH--015_R1.fastq BWH--015_R2.fastq BWH--015_R1_paired.fq.gz BWH--015_R1_unpaired.fq.gz BWH--015_R2_paired.fq.gz BWH--015_R2_unpaired.fq.gz SLIDINGWINDOW:4:20 MINLEN:50
-java -jar /usr/local/trimmomatic/0.39/trimmomatic-0.39.jar PE -threads 20 -phred33 BWH--016_R1.fastq BWH--016_R2.fastq BWH--016_R1_paired.fq.gz BWH--016_R1_unpaired.fq.gz BWH--016_R2_paired.fq.gz BWH--016_R2_unpaired.fq.gz SLIDINGWINDOW:4:20 MINLEN:50
-java -jar /usr/local/trimmomatic/0.39/trimmomatic-0.39.jar PE -threads 20 -phred33 BWH--017_R1.fastq BWH--017_R2.fastq BWH--017_R1_paired.fq.gz BWH--017_R1_unpaired.fq.gz BWH--017_R2_paired.fq.gz BWH--017_R2_unpaired.fq.gz SLIDINGWINDOW:4:20 MINLEN:50
-java -jar /usr/local/trimmomatic/0.39/trimmomatic-0.39.jar PE -threads 20 -phred33 BWH--018_R1.fastq BWH--018_R2.fastq BWH--018_R1_paired.fq.gz BWH--018_R1_unpaired.fq.gz BWH--018_R2_paired.fq.gz BWH--018_R2_unpaired.fq.gz SLIDINGWINDOW:4:20 MINLEN:50
-java -jar /usr/local/trimmomatic/0.39/trimmomatic-0.39.jar PE -threads 20 -phred33 BWH--019_R1.fastq BWH--019_R2.fastq BWH--019_R1_paired.fq.gz BWH--019_R1_unpaired.fq.gz BWH--019_R2_paired.fq.gz BWH--019_R2_unpaired.fq.gz SLIDINGWINDOW:4:20 MINLEN:50
-java -jar /usr/local/trimmomatic/0.39/trimmomatic-0.39.jar PE -threads 20 -phred33 BWH--020_R1.fastq BWH--020_R2.fastq BWH--020_R1_paired.fq.gz BWH--020_R1_unpaired.fq.gz BWH--020_R2_paired.fq.gz BWH--020_R2_unpaired.fq.gz SLIDINGWINDOW:4:20 MINLEN:50
-java -jar /usr/local/trimmomatic/0.39/trimmomatic-0.39.jar PE -threads 20 -phred33 BWH--021_R1.fastq BWH--021_R2.fastq BWH--021_R1_paired.fq.gz BWH--021_R1_unpaired.fq.gz BWH--021_R2_paired.fq.gz BWH--021_R2_unpaired.fq.gz SLIDINGWINDOW:4:20 MINLEN:50
-java -jar /usr/local/trimmomatic/0.39/trimmomatic-0.39.jar PE -threads 20 -phred33 BWH--022_R1.fastq BWH--022_R2.fastq BWH--022_R1_paired.fq.gz BWH--022_R1_unpaired.fq.gz BWH--022_R2_paired.fq.gz BWH--022_R2_unpaired.fq.gz SLIDINGWINDOW:4:20 MINLEN:50
-java -jar /usr/local/trimmomatic/0.39/trimmomatic-0.39.jar PE -threads 20 -phred33 BWH--023_R1.fastq BWH--023_R2.fastq BWH--023_R1_paired.fq.gz BWH--023_R1_unpaired.fq.gz BWH--023_R2_paired.fq.gz BWH--023_R2_unpaired.fq.gz SLIDINGWINDOW:4:20 MINLEN:50
-java -jar /usr/local/trimmomatic/0.39/trimmomatic-0.39.jar PE -threads 20 -phred33 BWH--024_R1.fastq BWH--024_R2.fastq BWH--024_R1_paired.fq.gz BWH--024_R1_unpaired.fq.gz BWH--024_R2_paired.fq.gz BWH--024_R2_unpaired.fq.gz SLIDINGWINDOW:4:20 MINLEN:50
-java -jar /usr/local/trimmomatic/0.39/trimmomatic-0.39.jar PE -threads 20 -phred33 BWH--025_R1.fastq BWH--025_R2.fastq BWH--025_R1_paired.fq.gz BWH--025_R1_unpaired.fq.gz BWH--025_R2_paired.fq.gz BWH--025_R2_unpaired.fq.gz SLIDINGWINDOW:4:20 MINLEN:50
-java -jar /usr/local/trimmomatic/0.39/trimmomatic-0.39.jar PE -threads 20 -phred33 BWH--026_R1.fastq BWH--026_R2.fastq BWH--026_R1_paired.fq.gz BWH--026_R1_unpaired.fq.gz BWH--026_R2_paired.fq.gz BWH--026_R2_unpaired.fq.gz SLIDINGWINDOW:4:20 MINLEN:50
-java -jar /usr/local/trimmomatic/0.39/trimmomatic-0.39.jar PE -threads 20 -phred33 BWH--027_R1.fastq BWH--027_R2.fastq BWH--027_R1_paired.fq.gz BWH--027_R1_unpaired.fq.gz BWH--027_R2_paired.fq.gz BWH--027_R2_unpaired.fq.gz SLIDINGWINDOW:4:20 MINLEN:50
-java -jar /usr/local/trimmomatic/0.39/trimmomatic-0.39.jar PE -threads 20 -phred33 BWH--028_R1.fastq BWH--028_R2.fastq BWH--028_R1_paired.fq.gz BWH--028_R1_unpaired.fq.gz BWH--028_R2_paired.fq.gz BWH--028_R2_unpaired.fq.gz SLIDINGWINDOW:4:20 MINLEN:50
-java -jar /usr/local/trimmomatic/0.39/trimmomatic-0.39.jar PE -threads 20 -phred33 BWH--029_R1.fastq BWH--029_R2.fastq BWH--029_R1_paired.fq.gz BWH--029_R1_unpaired.fq.gz BWH--029_R2_paired.fq.gz BWH--029_R2_unpaired.fq.gz SLIDINGWINDOW:4:20 MINLEN:50
-java -jar /usr/local/trimmomatic/0.39/trimmomatic-0.39.jar PE -threads 20 -phred33 BWH--030_R1.fastq BWH--030_R2.fastq BWH--030_R1_paired.fq.gz BWH--030_R1_unpaired.fq.gz BWH--030_R2_paired.fq.gz BWH--030_R2_unpaired.fq.gz SLIDINGWINDOW:4:20 MINLEN:50
 
+java -jar /usr/local/trimmomatic/0.39/trimmomatic-0.39.jar PE -threads 20 -phred33 BWH--000_R1.fastq BWH--000_R2.fastq BWH--000_R1_paired.fq.gz BWH--000_R1_unpaired.fq.gz BWH--000_R2_paired.fq.gz BWH--000_R2_unpaired.fq.gz SLIDINGWINDOW:4:20 MINLEN:50
+
+java -jar /usr/local/trimmomatic/0.39/trimmomatic-0.39.jar PE -threads 20 -phred33 BWH--001_R1.fastq BWH--001_R2.fastq BWH--001_R1_paired.fq.gz BWH--001_R1_unpaired.fq.gz BWH--001_R2_paired.fq.gz BWH--001_R2_unpaired.fq.gz SLIDINGWINDOW:4:20 MINLEN:50
+
+java -jar /usr/local/trimmomatic/0.39/trimmomatic-0.39.jar PE -threads 20 -phred33 BWH--002_R1.fastq BWH--002_R2.fastq BWH--002_R1_paired.fq.gz BWH--002_R1_unpaired.fq.gz BWH--002_R2_paired.fq.gz BWH--002_R2_unpaired.fq.gz SLIDINGWINDOW:4:20 MINLEN:50
+
+java -jar /usr/local/trimmomatic/0.39/trimmomatic-0.39.jar PE -threads 20 -phred33 BWH--003_R1.fastq BWH--003_R2.fastq BWH--003_R1_paired.fq.gz BWH--003_R1_unpaired.fq.gz BWH--003_R2_paired.fq.gz BWH--003_R2_unpaired.fq.gz SLIDINGWINDOW:4:20 MINLEN:50
+
+java -jar /usr/local/trimmomatic/0.39/trimmomatic-0.39.jar PE -threads 20 -phred33 BWH--004_R1.fastq BWH--004_R2.fastq BWH--004_R1_paired.fq.gz BWH--004_R1_unpaired.fq.gz BWH--004_R2_paired.fq.gz BWH--004_R2_unpaired.fq.gz SLIDINGWINDOW:4:20 MINLEN:50
+
+java -jar /usr/local/trimmomatic/0.39/trimmomatic-0.39.jar PE -threads 20 -phred33 BWH--005_R1.fastq BWH--005_R2.fastq BWH--005_R1_paired.fq.gz BWH--005_R1_unpaired.fq.gz BWH--005_R2_paired.fq.gz BWH--005_R2_unpaired.fq.gz SLIDINGWINDOW:4:20 MINLEN:50
+
+java -jar /usr/local/trimmomatic/0.39/trimmomatic-0.39.jar PE -threads 20 -phred33 BWH--006_R1.fastq BWH--006_R2.fastq BWH--006_R1_paired.fq.gz BWH--006_R1_unpaired.fq.gz BWH--006_R2_paired.fq.gz BWH--006_R2_unpaired.fq.gz SLIDINGWINDOW:4:20 MINLEN:50
+
+java -jar /usr/local/trimmomatic/0.39/trimmomatic-0.39.jar PE -threads 20 -phred33 BWH--007_R1.fastq BWH--007_R2.fastq BWH--007_R1_paired.fq.gz BWH--007_R1_unpaired.fq.gz BWH--007_R2_paired.fq.gz BWH--007_R2_unpaired.fq.gz SLIDINGWINDOW:4:20 MINLEN:50
+
+java -jar /usr/local/trimmomatic/0.39/trimmomatic-0.39.jar PE -threads 20 -phred33 BWH--008_R1.fastq BWH--008_R2.fastq BWH--008_R1_paired.fq.gz BWH--008_R1_unpaired.fq.gz BWH--008_R2_paired.fq.gz BWH--008_R2_unpaired.fq.gz SLIDINGWINDOW:4:20 MINLEN:50
+
+java -jar /usr/local/trimmomatic/0.39/trimmomatic-0.39.jar PE -threads 20 -phred33 BWH--009_R1.fastq BWH--009_R2.fastq BWH--009_R1_paired.fq.gz BWH--009_R1_unpaired.fq.gz BWH--009_R2_paired.fq.gz BWH--009_R2_unpaired.fq.gz SLIDINGWINDOW:4:20 MINLEN:50
+
+java -jar /usr/local/trimmomatic/0.39/trimmomatic-0.39.jar PE -threads 20 -phred33 BWH--010_R1.fastq BWH--010_R2.fastq BWH--010_R1_paired.fq.gz BWH--010_R1_unpaired.fq.gz BWH--010_R2_paired.fq.gz BWH--010_R2_unpaired.fq.gz SLIDINGWINDOW:4:20 MINLEN:50
+
+java -jar /usr/local/trimmomatic/0.39/trimmomatic-0.39.jar PE -threads 20 -phred33 BWH--011_R1.fastq BWH--011_R2.fastq BWH--011_R1_paired.fq.gz BWH--011_R1_unpaired.fq.gz BWH--011_R2_paired.fq.gz BWH--011_R2_unpaired.fq.gz SLIDINGWINDOW:4:20 MINLEN:50
+
+java -jar /usr/local/trimmomatic/0.39/trimmomatic-0.39.jar PE -threads 20 -phred33 BWH--012_R1.fastq BWH--012_R2.fastq BWH--012_R1_paired.fq.gz BWH--012_R1_unpaired.fq.gz BWH--012_R2_paired.fq.gz BWH--012_R2_unpaired.fq.gz SLIDINGWINDOW:4:20 MINLEN:50
+
+java -jar /usr/local/trimmomatic/0.39/trimmomatic-0.39.jar PE -threads 20 -phred33 BWH--013_R1.fastq BWH--013_R2.fastq BWH--013_R1_paired.fq.gz BWH--013_R1_unpaired.fq.gz BWH--013_R2_paired.fq.gz BWH--013_R2_unpaired.fq.gz SLIDINGWINDOW:4:20 MINLEN:50
+
+java -jar /usr/local/trimmomatic/0.39/trimmomatic-0.39.jar PE -threads 20 -phred33 BWH--014_R1.fastq BWH--014_R2.fastq BWH--014_R1_paired.fq.gz BWH--014_R1_unpaired.fq.gz BWH--014_R2_paired.fq.gz BWH--014_R2_unpaired.fq.gz SLIDINGWINDOW:4:20 MINLEN:50
+
+java -jar /usr/local/trimmomatic/0.39/trimmomatic-0.39.jar PE -threads 20 -phred33 BWH--015_R1.fastq BWH--015_R2.fastq BWH--015_R1_paired.fq.gz BWH--015_R1_unpaired.fq.gz BWH--015_R2_paired.fq.gz BWH--015_R2_unpaired.fq.gz SLIDINGWINDOW:4:20 MINLEN:50
+
+java -jar /usr/local/trimmomatic/0.39/trimmomatic-0.39.jar PE -threads 20 -phred33 BWH--016_R1.fastq BWH--016_R2.fastq BWH--016_R1_paired.fq.gz BWH--016_R1_unpaired.fq.gz BWH--016_R2_paired.fq.gz BWH--016_R2_unpaired.fq.gz SLIDINGWINDOW:4:20 MINLEN:50
+
+java -jar /usr/local/trimmomatic/0.39/trimmomatic-0.39.jar PE -threads 20 -phred33 BWH--017_R1.fastq BWH--017_R2.fastq BWH--017_R1_paired.fq.gz BWH--017_R1_unpaired.fq.gz BWH--017_R2_paired.fq.gz BWH--017_R2_unpaired.fq.gz SLIDINGWINDOW:4:20 MINLEN:50
+
+java -jar /usr/local/trimmomatic/0.39/trimmomatic-0.39.jar PE -threads 20 -phred33 BWH--018_R1.fastq BWH--018_R2.fastq BWH--018_R1_paired.fq.gz BWH--018_R1_unpaired.fq.gz BWH--018_R2_paired.fq.gz BWH--018_R2_unpaired.fq.gz SLIDINGWINDOW:4:20 MINLEN:50
+
+java -jar /usr/local/trimmomatic/0.39/trimmomatic-0.39.jar PE -threads 20 -phred33 BWH--019_R1.fastq BWH--019_R2.fastq BWH--019_R1_paired.fq.gz BWH--019_R1_unpaired.fq.gz BWH--019_R2_paired.fq.gz BWH--019_R2_unpaired.fq.gz SLIDINGWINDOW:4:20 MINLEN:50
+
+java -jar /usr/local/trimmomatic/0.39/trimmomatic-0.39.jar PE -threads 20 -phred33 BWH--020_R1.fastq BWH--020_R2.fastq BWH--020_R1_paired.fq.gz BWH--020_R1_unpaired.fq.gz BWH--020_R2_paired.fq.gz BWH--020_R2_unpaired.fq.gz SLIDINGWINDOW:4:20 MINLEN:50
+
+java -jar /usr/local/trimmomatic/0.39/trimmomatic-0.39.jar PE -threads 20 -phred33 BWH--021_R1.fastq BWH--021_R2.fastq BWH--021_R1_paired.fq.gz BWH--021_R1_unpaired.fq.gz BWH--021_R2_paired.fq.gz BWH--021_R2_unpaired.fq.gz SLIDINGWINDOW:4:20 MINLEN:50
+
+java -jar /usr/local/trimmomatic/0.39/trimmomatic-0.39.jar PE -threads 20 -phred33 BWH--022_R1.fastq BWH--022_R2.fastq BWH--022_R1_paired.fq.gz BWH--022_R1_unpaired.fq.gz BWH--022_R2_paired.fq.gz BWH--022_R2_unpaired.fq.gz SLIDINGWINDOW:4:20 MINLEN:50
+
+java -jar /usr/local/trimmomatic/0.39/trimmomatic-0.39.jar PE -threads 20 -phred33 BWH--023_R1.fastq BWH--023_R2.fastq BWH--023_R1_paired.fq.gz BWH--023_R1_unpaired.fq.gz BWH--023_R2_paired.fq.gz BWH--023_R2_unpaired.fq.gz SLIDINGWINDOW:4:20 MINLEN:50
+
+java -jar /usr/local/trimmomatic/0.39/trimmomatic-0.39.jar PE -threads 20 -phred33 BWH--024_R1.fastq BWH--024_R2.fastq BWH--024_R1_paired.fq.gz BWH--024_R1_unpaired.fq.gz BWH--024_R2_paired.fq.gz BWH--024_R2_unpaired.fq.gz SLIDINGWINDOW:4:20 MINLEN:50
+
+java -jar /usr/local/trimmomatic/0.39/trimmomatic-0.39.jar PE -threads 20 -phred33 BWH--025_R1.fastq BWH--025_R2.fastq BWH--025_R1_paired.fq.gz BWH--025_R1_unpaired.fq.gz BWH--025_R2_paired.fq.gz BWH--025_R2_unpaired.fq.gz SLIDINGWINDOW:4:20 MINLEN:50
+
+java -jar /usr/local/trimmomatic/0.39/trimmomatic-0.39.jar PE -threads 20 -phred33 BWH--026_R1.fastq BWH--026_R2.fastq BWH--026_R1_paired.fq.gz BWH--026_R1_unpaired.fq.gz BWH--026_R2_paired.fq.gz BWH--026_R2_unpaired.fq.gz SLIDINGWINDOW:4:20 MINLEN:50
+
+java -jar /usr/local/trimmomatic/0.39/trimmomatic-0.39.jar PE -threads 20 -phred33 BWH--027_R1.fastq BWH--027_R2.fastq BWH--027_R1_paired.fq.gz BWH--027_R1_unpaired.fq.gz BWH--027_R2_paired.fq.gz BWH--027_R2_unpaired.fq.gz SLIDINGWINDOW:4:20 MINLEN:50
+
+java -jar /usr/local/trimmomatic/0.39/trimmomatic-0.39.jar PE -threads 20 -phred33 BWH--028_R1.fastq BWH--028_R2.fastq BWH--028_R1_paired.fq.gz BWH--028_R1_unpaired.fq.gz BWH--028_R2_paired.fq.gz BWH--028_R2_unpaired.fq.gz SLIDINGWINDOW:4:20 MINLEN:50
+
+java -jar /usr/local/trimmomatic/0.39/trimmomatic-0.39.jar PE -threads 20 -phred33 BWH--029_R1.fastq BWH--029_R2.fastq BWH--029_R1_paired.fq.gz BWH--029_R1_unpaired.fq.gz BWH--029_R2_paired.fq.gz BWH--029_R2_unpaired.fq.gz SLIDINGWINDOW:4:20 MINLEN:50
+
+java -jar /usr/local/trimmomatic/0.39/trimmomatic-0.39.jar PE -threads 20 -phred33 BWH--030_R1.fastq BWH--030_R2.fastq BWH--030_R1_paired.fq.gz BWH--030_R1_unpaired.fq.gz BWH--030_R2_paired.fq.gz BWH--030_R2_unpaired.fq.gz SLIDINGWINDOW:4:20 MINLEN:50
 ```
 
-The next fastQC shows that the ends of the reads now present a much better quality:
+The next fastQC shows that the ends of the reads now present a much
+better quality:
 
 ```{bash eval = FALSE}
 #!/bin/bash
@@ -148,7 +195,11 @@ fastqc *paired.fq.gz -t 20 -o FASTQC_afterTrim
 
 ## Genome download
 
-I will use the reference genome GRCh38 from Ensembl as one of my future plans is to make a new transcript analysis and an alternative splicing analysis, though this is beyond the scope of this master thesis project. First the fasta file has to be downloaded chromosome by chromosome and store in a single file:
+I will use the reference genome GRCh38 from Ensembl as one of my future
+plans is to make a new transcript analysis and an alternative splicing
+analysis, though this is beyond the scope of this master thesis project.
+First the fasta file has to be downloaded chromosome by chromosome and
+store in a single file:
 
 ```{bash eval = FALSE}
 #!/bin/bash
@@ -166,7 +217,6 @@ stat -c %s Homo_sapiens.GRCh38.dna.chromosome.all.fa.gz
 rm Homo_sapiens.GRCh38.dna.chromosome.${chr}*
 echo Finishing with chromosome ${chr}
 done
-
 ```
 
 Then the annotation file is downloaded:
@@ -204,7 +254,11 @@ do
 done
 ```
 
-In the first paragraph of the loop the alignment as it is is performed, using hisat2[@kim2019]. The second part of the loop uses samtools[@li2009] to transform the sam files into bam files (much smaller in size) and sorting and indexing of the reads by their coordinates.
+In the first paragraph of the loop the alignment as it is is performed,
+using hisat2[@kim2019]. The second part of the loop uses
+samtools[@li2009] to transform the sam files into bam files (much
+smaller in size) and sorting and indexing of the reads by their
+coordinates.
 
 The results of this process is very satisfactory:
 
@@ -248,7 +302,8 @@ grep overall summary_alignment.txt | wc -l
 
 ## Gene quantification
 
-The gene quantification was done using htseq-count[@anders2014], a Python package.
+The gene quantification was done using htseq-count[@anders2014], a
+Python package.
 
 ```{bash eval = FALSE}
 #!/bin/bash
@@ -264,14 +319,24 @@ do
 
         echo Finishing with ${index}
 done
-
 ```
 
-Out of the arguments of this command arguably the most interesting is *-m intersection-strict*, which specifies the way the overlaps are managed. If the read is in the range of a coding exon but it is present outside its boundaries, it is interpreted as if this read has no gene match.
+Out of the arguments of this command arguably the most interesting is
+*-m intersection-strict*, which specifies the way the overlaps are
+managed. If the read is in the range of a coding exon but it is present
+outside its boundaries, it is interpreted as if this read has no gene
+match.
 
 # Differential Gene Expression analysis
 
-The DGE analysis aims to detect if there are any differentially expressed genes between the affected and unaffected individuals. To proceed first step is to load the libraries[@rstudioapi; @gplots; @ggplot2; @pheatmap; @DESeq2; @org.Hs.eg.db; @EnhancedVolcano; @ggrepel]. This script is based on the one used in the Genomics assistance unit of the CBMSO, done by Ramón Peiró-Pastor, Eva Castillo Rosa, Eva Sacristán and Sandra González, inspired on the draft of Alberto Rastrojo, as well as from the DESeq2 vignette [@love2014].
+The DGE analysis aims to detect if there are any differentially
+expressed genes between the affected and unaffected individuals. To
+proceed first step is to load the libraries[@rstudioapi; @gplots;
+@ggplot2; @pheatmap; @DESeq2; @org.Hs.eg.db; @EnhancedVolcano;
+@ggrepel]. This script is based on the one used in the Genomics
+assistance unit of the CBMSO, done by Ramón Peiró-Pastor, Eva Castillo
+Rosa, Eva Sacristán and Sandra González, inspired on the draft of
+Alberto Rastrojo, as well as from the DESeq2 vignette [@love2014].
 
 ```{r eval = FALSE}
 suppressPackageStartupMessages({
@@ -286,7 +351,10 @@ suppressPackageStartupMessages({
 require("ggrepel", quietly = TRUE)
 ```
 
-With the next chunk I specify the paths for the input and output file: it is easier to change the names and directories here rather than look for them in the script. I also specify the working directory, for which I use rstudioapi to detect the source file location.
+With the next chunk I specify the paths for the input and output file:
+it is easier to change the names and directories here rather than look
+for them in the script. I also specify the working directory, for which
+I use rstudioapi to detect the source file location.
 
 ```{r eval = FALSE}
 #Paths
@@ -310,7 +378,9 @@ volcanoF <- paste0(resD,"volcanoPlot.jpeg")
 heatmapF <- paste0(resD,"heatmap.jpeg")
 ```
 
-Then I set the parameters that will be later used. Again, it is easier to specify them at the start of the script for making multiple trials rather than look for them in the script:
+Then I set the parameters that will be later used. Again, it is easier
+to specify them at the start of the script for making multiple trials
+rather than look for them in the script:
 
 ```{r eval = FALSE}
 cutoff <- 0.05 #significancy p value adjusted
@@ -318,7 +388,8 @@ FCthres <- 4 #fold change threshold to consider in graphs
 covs <- T
 ```
 
-I also made a function to make the names in the axis of some charts in italics:
+I also made a function to make the names in the axis of some charts in
+italics:
 
 ```{r eval = FALSE}
 make_italics <- function(x){
@@ -326,7 +397,9 @@ make_italics <- function(x){
 }
 ```
 
-Now that it's everything settled, it is the moment to start with the fun! To load the data files, of the gene quantification, with the associated covariates the configuration file is loaded:
+Now that it's everything settled, it is the moment to start with the
+fun! To load the data files, of the gene quantification, with the
+associated covariates the configuration file is loaded:
 
 ```{r eval = FALSE}
 sampleTable <- read.table(configFile, header=TRUE, 
@@ -334,14 +407,18 @@ sampleTable <- read.table(configFile, header=TRUE,
                                         'factor','factor'))
 ```
 
-The counts have to be converted into a DESeq object. It takes the second column of the config file, which indicates where the counts of each sample are located. It is also necessary to specify the model, in which age, gender and pedigree are taken into consideration:
+The counts have to be converted into a DESeq object. It takes the second
+column of the config file, which indicates where the counts of each
+sample are located. It is also necessary to specify the model, in which
+age, gender and pedigree are taken into consideration:
 
 ```{r eval = FALSE}
 data <- DESeqDataSetFromHTSeqCount(sampleTable, directory=".", 
                                    design = ~ age + gender + PED + condition)
 ```
 
-We are going to filter those genes that have a very low total number of counts, as can be considered more noise than useful information:
+We are going to filter those genes that have a very low total number of
+counts, as can be considered more noise than useful information:
 
 ```{r eval = FALSE}
 keep <- rowSums(counts(data)) >= 10
@@ -349,7 +426,10 @@ data <- data[keep,]
 #With this filter, the object goes from 61806 elements to 28525 elements
 ```
 
-Now it is time to run the DESEQ() function, which does the actual DGE analysis[@anders2010]. This function wraps three functions in one for easy usage, but I decided to run the three functions one by one to adjust the number of iterations.
+Now it is time to run the DESEQ() function, which does the actual DGE
+analysis[@anders2010]. This function wraps three functions in one for
+easy usage, but I decided to run the three functions one by one to
+adjust the number of iterations.
 
 ```{r eval = FALSE}
 dds <- estimateSizeFactors(data)
@@ -357,9 +437,26 @@ dds <- estimateDispersions(dds)
 dds <- nbinomWaldTest(dds, maxit = 10000)
 ```
 
-The function estimateSizeFactors() normalize each sample to the total number of reads on its library, using the median of ratios method. The estimateDispersions() function accounts for the within-groups variability, thus, the variability between samples with the same condition: this is specially important in this case because of the small sample size. The last function, nbinomWaldTest(), tests for significance of coefficients assuming a negative binomial distribution.
+The function estimateSizeFactors() normalize each sample to the total
+number of reads on its library, using the median of ratios method. The
+estimateDispersions() function accounts for the within-groups
+variability, thus, the variability between samples with the same
+condition: this is specially important in this case because of the small
+sample size. The last function, nbinomWaldTest(), tests for significance
+of coefficients assuming a negative binomial distribution.
 
-The variability of the data in DESeq is calculated by the formula \$ var = 𝜇 + 𝛼\*𝜇\^2 \$ where 𝜇 is the mean and 𝛼 the dispersion. For genes with high count values, \$ 𝛼 = var/𝜇 \$, therefore the dispersion estimate can reflect the variance in gene expression for a given mean. DESeq2 assumes that genes with similar average expression (calculated from all the samples) have similar dispersion. Each gene gets an estimation of its dispersion estimate using maximum likelihood (ML). Then a curve for expected dispersion value for genes with a given mean is fitted. Finally each gene dispersion is shrinkaged toward the fitted predicted curve: the recalculated dispersion value will be used in the later nbinomWaldTest() step, reducing drastically the number of false positives.
+The variability of the data in DESeq is calculated by the formula \$ var
+= 𝜇 + 𝛼\*𝜇\^2 \$ where 𝜇 is the mean and 𝛼 the dispersion. For genes
+with high count values, \$ 𝛼 = var/𝜇 \$, therefore the dispersion
+estimate can reflect the variance in gene expression for a given mean.
+DESeq2 assumes that genes with similar average expression (calculated
+from all the samples) have similar dispersion. Each gene gets an
+estimation of its dispersion estimate using maximum likelihood (ML).
+Then a curve for expected dispersion value for genes with a given mean
+is fitted. Finally each gene dispersion is shrinkaged toward the fitted
+predicted curve: the recalculated dispersion value will be used in the
+later nbinomWaldTest() step, reducing drastically the number of false
+positives.
 
 The dispersion plot can be produced:
 
@@ -372,7 +469,14 @@ invisible(dev.off())
 
 ![Figure X: Per-gene dispersion estimates](results_DGE/dispersion.tiff)
 
-Though very crowded, it can be seen that most genes, specially with dispersions below the fitted expected curve, have been recalculated: the ones that have remained the same are the black dots surrounded by a blue circle. Also, the data fits the DESeq2 model because it scatters around the curve, and such fitted curve always present a negative slope (as it should according to the variability formula of DESeq2). I am going to save the results of both total counts and normalized counts for later use in other analysis.
+Though very crowded, it can be seen that most genes, specially with
+dispersions below the fitted expected curve, have been recalculated: the
+ones that have remained the same are the black dots surrounded by a blue
+circle. Also, the data fits the DESeq2 model because it scatters around
+the curve, and such fitted curve always present a negative slope (as it
+should according to the variability formula of DESeq2). I am going to
+save the results of both total counts and normalized counts for later
+use in other analysis.
 
 ```{r eval = FALSE}
 dds_raw <- counts(dds, normalized=FALSE)
@@ -383,7 +487,12 @@ write.table(dds_normalized, file=normCountsF, quote=FALSE,
              sep = "\t", col.names=NA)
 ```
 
-We must remove the effect of the covariates with the limma package and the function removeBatchEffect(): we don't want to see the effect of gender, age or family in the data, just the differences in expression due to condition, plus this is crucial to account for the different family structures that are present in each pedigree. The *covs* parameter must be set in **TRUE** to take away the covariates effect.
+We must remove the effect of the covariates with the limma package and
+the function removeBatchEffect(): we don't want to see the effect of
+gender, age or family in the data, just the differences in expression
+due to condition, plus this is crucial to account for the different
+family structures that are present in each pedigree. The *covs*
+parameter must be set in **TRUE** to take away the covariates effect.
 
 ```{r eval = FALSE}
 if (covs) {
@@ -400,9 +509,17 @@ if (covs) {
 }
 ```
 
-The varianceStabilizingTransformation() function (or the wrapper vst()) normalizes the data by getting a vst factor from the fitted dispersion-mean relation and multiplies the count data divided by the size factor (which means that takes into account the library size). The *blind* parameter must be **FALSE** to take into account the experimental design with covariates.
+The varianceStabilizingTransformation() function (or the wrapper vst())
+normalizes the data by getting a vst factor from the fitted
+dispersion-mean relation and multiplies the count data divided by the
+size factor (which means that takes into account the library size). The
+*blind* parameter must be **FALSE** to take into account the
+experimental design with covariates.
 
-An interesting feature of this package is that it provides functions for visualization of the input data, which can be used for quality control. The Principal Component Analysis would show if there are clusters or patterns in the data.
+An interesting feature of this package is that it provides functions for
+visualization of the input data, which can be used for quality control.
+The Principal Component Analysis would show if there are clusters or
+patterns in the data.
 
 ```{r eval = FALSE}
 tiff(filename = PCAF, units="in", width=5, 
@@ -415,9 +532,13 @@ invisible(dev.off())
 
 ![Figure X: PCA](results_DGE/PCA.tiff)
 
-No clusters separating unaffected and affected individuals are found, and this is expected: both groups share much of their genetic background, and bipolar disorder is a highly-complex polygenic disease.
+No clusters separating unaffected and affected individuals are found,
+and this is expected: both groups share much of their genetic
+background, and bipolar disorder is a highly-complex polygenic disease.
 
-Having go through all this, we extract the results of the DGE analysis with the results() function. To do so, first we have to get the factor levels:
+Having go through all this, we extract the results of the DGE analysis
+with the results() function. To do so, first we have to get the factor
+levels:
 
 ```{r eval = FALSE}
 #Get factor levels
@@ -455,9 +576,14 @@ invisible(dev.off())
 
 ![Figure X: MA plot](results_DGE/maplot.tiff)
 
-The MA plot shows the change in expression between condition groups against the mean expression across all the samples. On red there are those genes with an adjusted p value below 0.01. From this image we can also appreciate that the data follows the expected distribution as the points make a funnel shape.
+The MA plot shows the change in expression between condition groups
+against the mean expression across all the samples. On red there are
+those genes with an adjusted p value below 0.01. From this image we can
+also appreciate that the data follows the expected distribution as the
+points make a funnel shape.
 
-I save the results object to get the list of significant differentially expressed genes:
+I save the results object to get the list of significant differentially
+expressed genes:
 
 ```{r eval = F}
 write.table (res, file=genesTSV, quote=FALSE, sep="\t", col.names=NA)
@@ -465,7 +591,11 @@ sig_pval <- subset(res, res$pvalue < cutoff)
 write.table (sig_pval, file=sigTSV, quote=FALSE, sep="\t", col.names=NA)
 ```
 
-Now we can clean and visualize the results with the arguably most popular graphs for the DGE analysis: the volcano plot and the heatmap. I want as well to create a PCA with only the significant genes, to check that the two gropus can be separated with this info. First we get an object of the significant genes:
+Now we can clean and visualize the results with the arguably most
+popular graphs for the DGE analysis: the volcano plot and the heatmap. I
+want as well to create a PCA with only the significant genes, to check
+that the two gropus can be separated with this info. First we get an
+object of the significant genes:
 
 ```{r eval = FALSE}
 #Get most significant genes according to cut off
@@ -503,9 +633,11 @@ invisible(dev.off())
 write.table (significant, file=alphasigTSV, quote=FALSE, sep="\t", col.names=NA)
 ```
 
-![Figure X: PCA of data only taking into account the significant genes with realistic fold change value](results_DGE/PCA_sig.tiff)
+![Figure X: PCA of data only taking into account the significant genes
+with realistic fold change value](results_DGE/PCA_sig.tiff)
 
-For the volcano plot we don't want to consider genes that don't have gene symbol.
+For the volcano plot we don't want to consider genes that don't have
+gene symbol.
 
 ```{r eval = FALSE}
 discardNA <- !is.na(res$padj)
@@ -530,7 +662,8 @@ invisible(dev.off())
 
 ![Figure X: Volcano plot](results_DGE/volcanoPlot.jpeg)
 
-For the heatmap we create a new object that only and just has the genes of interest:
+For the heatmap we create a new object that only and just has the genes
+of interest:
 
 ```{r eval = FALSE}
 significant001 <- significant[significant$padj < 0.01,]
@@ -567,13 +700,27 @@ pheatmap(lsubcounts, scale= 'row', cluster_rows = TRUE,
 invisible(dev.off())
 ```
 
-![Figure X: Heat map of most significant genes](results_DGE/heatmap.jpeg) Though these genes show distinct patterns of expression in the different conditions, there are cases in which there may be, for instance, underexpression in affected and unaffected individuals: this is because their genetic background is shared and may be similar though one of them does develop the disease but not the other.
+![Figure X: Heat map of most significant
+genes](results_DGE/heatmap.jpeg) Though these genes show distinct
+patterns of expression in the different conditions, there are cases in
+which there may be, for instance, underexpression in affected and
+unaffected individuals: this is because their genetic background is
+shared and may be similar though one of them does develop the disease
+but not the other.
 
 ## Gene Set Enrichment Analysis
 
-The Gene Set Enrichment Analysis (GSEA) doesn't looks if predefined sets of genes show a different pattern of expression[@subramanian2005]. The genes can be divided in sets according to their chromosomal location, cellular location of product, or as in this case, their function. I decided to use the Gene Ontology sets, focus on Molecular Process, which would give a rather simplified result [@liberzon2011]. This script is based in the one of the Genomics unit at CBMSO, from Eva Sacristán and Sandra González.
+The Gene Set Enrichment Analysis (GSEA) doesn't looks if predefined sets
+of genes show a different pattern of expression[@subramanian2005]. The
+genes can be divided in sets according to their chromosomal location,
+cellular location of product, or as in this case, their function. I
+decided to use the Gene Ontology sets, focus on Molecular Process, which
+would give a rather simplified result [@liberzon2011]. This script is
+based in the one of the Genomics unit at CBMSO, from Eva Sacristán and
+Sandra González.
 
-The first step is to call the libraries[@clusterProfiler; @msigdbr; @UpSetR; @enrichplot]:
+The first step is to call the libraries[@clusterProfiler; @msigdbr;
+@UpSetR; @enrichplot]:
 
 ```{r}
 suppressPackageStartupMessages({
@@ -612,7 +759,8 @@ subcategory <- 'GO:BP'
 topCat <- 5
 ```
 
-The 'hallmark' category in the mSigDB doesn't have any subcategories. We load the data:
+The 'hallmark' category in the mSigDB doesn't have any subcategories. We
+load the data:
 
 ```{r eval = FALSE}
 data <- read.delim(input, sep= "\t", header=T, row.names = 1)
@@ -621,7 +769,10 @@ names(dat) <- as.character(rownames(data))
 dat <- sort(dat, decreasing=TRUE)
 ```
 
-In the data object *dat*, the row names are the genes, in their Ensembl ID, and only has other column, the log2fold change, which serves as measure of difference of expression. To further proceed, we request to get the data base sets in a local object:
+In the data object *dat*, the row names are the genes, in their Ensembl
+ID, and only has other column, the log2fold change, which serves as
+measure of difference of expression. To further proceed, we request to
+get the data base sets in a local object:
 
 ```{r}
 db_sets <- msigdbr(species = 'Homo sapiens', category = category, 
@@ -641,14 +792,23 @@ egs_df <- egs_df[, -c(1,2)]
 write.table(egs_df, file = resTSV, sep= "\t", quote = F, row.names = T)
 ```
 
-Now that we have the results we can recalculate the *topCat* parameter: it is used to plot the top categories from the results, but in some cases there are less categories than expected. For a smooth run, it is better to evaluate this.
+Now that we have the results we can recalculate the *topCat* parameter:
+it is used to plot the top categories from the results, but in some
+cases there are less categories than expected. For a smooth run, it is
+better to evaluate this.
 
 ```{r eval = FALSE}
 if (dim(egs_df)[1] < topCat){
   topCat <- dim(egs_df)[1]}
 ```
 
-We can proceed to plot the results. To further understand them, it is necessary to define the **gene ratio**: it is the percentage of total DEGs related to the catagory present for the total of genes in the given term $geneRatio = CoreEnrichmentGenes / PathwayGenes$. For example, if there are 1000 genes in a GO term, and 13 significant differentially expressed on the sample regarding this term, the gene ratio would be 1.3[@yulab2021].
+We can proceed to plot the results. To further understand them, it is
+necessary to define the **gene ratio**: it is the percentage of total
+DEGs related to the catagory present for the total of genes in the given
+term $geneRatio = CoreEnrichmentGenes / PathwayGenes$. For example, if
+there are 1000 genes in a GO term, and 13 significant differentially
+expressed on the sample regarding this term, the gene ratio would be
+1.3[@yulab2021].
 
 ```{r eval=FALSE}
 ##Dotplot
@@ -661,8 +821,13 @@ dotplot(egs, x = "GeneRatio", color = "p.adjust", showCategory = 20,
 invisible(dev.off())
 ```
 
-![Figure X: dot plot with GSEA categories](results_GSEA/GO_BP/dotplot.jpeg) 
-This dot plot shows the fours significant categories, ordered by gene ratio. Each dot is colored by adjusted p value, being the category 'immunoglobulin production' the most significant. The size of each dot shows the count of core enrichment genes for that category: the GO term with more significant genes is the one regarding the adaptative response.
+![Figure X: dot plot with GSEA
+categories](results_GSEA/GO_BP/dotplot.jpeg) This dot plot shows the
+fours significant categories, ordered by gene ratio. Each dot is colored
+by adjusted p value, being the category 'immunoglobulin production' the
+most significant. The size of each dot shows the count of core
+enrichment genes for that category: the GO term with more significant
+genes is the one regarding the adaptative response.
 
 ```{r eval = FALSE}
 ##Gene-concept network
@@ -673,8 +838,14 @@ cnetplot(egs, categorySize="p.adjust", font.size = 15, colorEdge = T)
 invisible(dev.off())
 ```
 
-![Figure X: Gene concept network graph](results_GSEA/GO_BP/gene_concept_net.jpeg) 
-The gene concept network provides information of which genes are in each categories and if they overlap among categories. It is difficult to change their settings and interpret with this nomenclature: the problem is that using a more user friendly nomenclature gets many missing names, and there is loss of information. Fortunately, upset plot says the same and its more friendly.
+![Figure X: Gene concept network
+graph](results_GSEA/GO_BP/gene_concept_net.jpeg) The gene concept
+network provides information of which genes are in each categories and
+if they overlap among categories. It is difficult to change their
+settings and interpret with this nomenclature: the problem is that using
+a more user friendly nomenclature gets many missing names, and there is
+loss of information. Fortunately, upset plot says the same and its more
+friendly.
 
 ```{r eval = FALSE}
 ##Ridge line plot
@@ -684,10 +855,15 @@ ridgeplot(egs, fill="p.adjust", orderBy= 'NES', core_enrichment = T)
 invisible(dev.off())
 ```
 
-![Figure X: Ridge plot of GSEA categories](results_GSEA/GO_BP/GSEA_ridge.jpeg) 
-The ridge plot is a density plot of the frequency of log2 fold-change values per enriched gene within each category, and helps visualize if there is over or underexpression of the category function. In this particular case, all of them seem to be downregulated.
+![Figure X: Ridge plot of GSEA
+categories](results_GSEA/GO_BP/GSEA_ridge.jpeg) The ridge plot is a
+density plot of the frequency of log2 fold-change values per enriched
+gene within each category, and helps visualize if there is over or
+underexpression of the category function. In this particular case, all
+of them seem to be downregulated.
 
-For the next visualization figures, it is necessary to design a list with each category that stores their belonging genes.
+For the next visualization figures, it is necessary to design a list
+with each category that stores their belonging genes.
 
 ```{r eval = FALSE}
 genes_top <- as.data.frame(as.factor(head(egs@result$core_enrichment, topCat)))
@@ -713,7 +889,8 @@ colnames(mat_df) <- func_top
 row.names(mat_df) <- uniq
 ```
 
-With this data frame prepared, we can do the upset plot and the GSEA plots:
+With this data frame prepared, we can do the upset plot and the GSEA
+plots:
 
 ```{r eval = FALSE}
 jpeg(file = upsetF, units = 'in', width = 15, height = 10, res = 300)
@@ -721,8 +898,16 @@ upset(mat_df, nsets=10, order.by="freq", sets.bar.color="skyblue")
 invisible(dev.off())
 ```
 
-![Figure X: Upset plot](results_GSEA/GO_BP/upset_plot.jpeg) 
-The upset plot shows the overlap among the terms, similarly to the gene concept network. The categories are ordered by set size, thus, by how many genes are there in each category. Each column is an intersection or group of genes that go together. For example, the first column shows that 66 genes are only present in the adaptative response category. The second column shows that there are 31 genes overlapping immunoglobulin production and production of molecular mediators. In fact, the category of immunoglobulin production doesn't have any gene that is not present as well in one of the other three categories.
+![Figure X: Upset plot](results_GSEA/GO_BP/upset_plot.jpeg) The upset
+plot shows the overlap among the terms, similarly to the gene concept
+network. The categories are ordered by set size, thus, by how many genes
+are there in each category. Each column is an intersection or group of
+genes that go together. For example, the first column shows that 66
+genes are only present in the adaptative response category. The second
+column shows that there are 31 genes overlapping immunoglobulin
+production and production of molecular mediators. In fact, the category
+of immunoglobulin production doesn't have any gene that is not present
+as well in one of the other three categories.
 
 ```{r eval = FALSE}
 for (j in 1:numPlots){
@@ -733,14 +918,21 @@ for (j in 1:numPlots){
 }
 ```
 
-![Figure X: category \_ GSEA plot](results_GSEA/GO_BP/GOBP_ADAPTIVE_IMMUNE_RESPONSE_BASED_ON_SOMATIC_RECOMBINATION_OF_IMMUNE_RECEPTORS_BUILT_FROM_IMMUNOGLOBULIN_SUPERFAMILY_DOMAINS.jpeg) ![Figure X: category \_ GSEA plot](results_GSEA/GO_BP/GOBP_IMMUNOGLOBULIN_PRODUCTION.jpeg)
+![Figure X: category \_ GSEA
+plot](results_GSEA/GO_BP/GOBP_ADAPTIVE_IMMUNE_RESPONSE_BASED_ON_SOMATIC_RECOMBINATION_OF_IMMUNE_RECEPTORS_BUILT_FROM_IMMUNOGLOBULIN_SUPERFAMILY_DOMAINS.jpeg)
+![Figure X: category \_ GSEA
+plot](results_GSEA/GO_BP/GOBP_IMMUNOGLOBULIN_PRODUCTION.jpeg)
 
-![Figure X: category \_ GSEA plot](results_GSEA/GO_BP/GOBP_NEGATIVE_REGULATION_OF_DNA_BINDING.jpeg)
+![Figure X: category \_ GSEA
+plot](results_GSEA/GO_BP/GOBP_NEGATIVE_REGULATION_OF_DNA_BINDING.jpeg)
 
-![Figure X: category \_ GSEA plot](results_GSEA/GO_BP/GOBP_PRODUCTION_OF_MOLECULAR_MEDIATOR_OF_IMMUNE_RESPONSE.jpeg)
+![Figure X: category \_ GSEA
+plot](results_GSEA/GO_BP/GOBP_PRODUCTION_OF_MOLECULAR_MEDIATOR_OF_IMMUNE_RESPONSE.jpeg)
 
-The GSEA plots shows where the hit genes are ordered in the ranked list, compared to the running enrichment score. The four categories show a greater amount of hits with negative enrichment score, showing once again the underexpression.
-We can fuse all this plots together by:
+The GSEA plots shows where the hit genes are ordered in the ranked list,
+compared to the running enrichment score. The four categories show a
+greater amount of hits with negative enrichment score, showing once
+again the underexpression. We can fuse all this plots together by:
 
 ```{r eval = FALSE}
 gseap <- gseaplot2(egs, geneSetID = 1:topCat, pvalue_table = F)
@@ -748,15 +940,22 @@ ggsave(gseap, file=gseaplotsF, device = "jpeg", units= "in",
        height = 15, width = 20)
 ```
 
-![Figure X: category \_ GSEA plot](results_GSEA/GO_BP/all_gseaplots.jpeg)
+![Figure X: category \_ GSEA
+plot](results_GSEA/GO_BP/all_gseaplots.jpeg)
 
 # Weighted Gene Coexpression Network Analysis
 
-The Weighted Gene Coexpression Network Analysis (WGCNA) is... [@langfelder2008]I have divided the scripts in five parts for simplicity reasons. They are based on the WGCNA tutorials made by Peter Langfelder and Steve Horvarth [@langfelderhorvarth2008].
+The Weighted Gene Coexpression Network Analysis (WGCNA) is...
+[@langfelder2008]I have divided the scripts in five parts for simplicity
+reasons. They are based on the WGCNA tutorials made by Peter Langfelder
+and Steve Horvarth [@langfelderhorvarth2008].
 
 ## Part 1: Data preparation
 
-First the libraries are loaded. As in the previous analysis, we are going to take the covariates into account, but we'll design a script in which this can be chosen, by using the cariable *covs*.
+First the libraries are loaded [@WGCNA]. As in the previous analysis, we
+are going to take the covariates into account, but we'll design a script
+in which this can be chosen, by using the cariable *covs*.
+
 ```{r eval = FALSE}
 suppressPackageStartupMessages({
   library(rstudioapi)
@@ -768,7 +967,9 @@ options(stringsAsFactors = FALSE)
 enableWGCNAThreads()
 covs <- T
 ```
+
 We set the paths and files that will be needed:
+
 ```{r eval = FALSE}
 workingD <- rstudioapi::getActiveDocumentContext()$path
 setwd(dirname(workingD))
@@ -780,13 +981,20 @@ resD <- 'results_WGCNA/'
 samtreeF <- paste0(resD,"sampleClustering.jpeg")
 finalresults <- paste0(resD,'initialData_datExpr_sampleTable.RData')
 ```
+
 We load the covariates related to each sample:
+
 ```{r eval = FALSE}
 sampleTable <- read.table(inputC, header=TRUE, row.names = 1, colClasses = 
                             rep('factor', 5))
 sampleTable <- sampleTable[,c(3,4,5,2)]
 ```
-Now I will load the normalized count data. Normalization is crucial for WGCNA. WGCNA is very sensitive to noise, so I want as well to remove all those genes which have less than 10 counts in the 90% of the samples. I want as well to order the count data frame as in the configuration file.
+
+Now I will load the normalized count data. Normalization is crucial for
+WGCNA. WGCNA is very sensitive to noise, so I want as well to remove all
+those genes which have less than 10 counts in the 90% of the samples. I
+want as well to order the count data frame as in the configuration file.
+
 ```{r eval = FALSE}
 df <- read.table(file = inputTSV, sep = '\t', header = TRUE, row.names = 1)
 #Filter low count genes, with less than 10 counts in 90% of features
@@ -797,7 +1005,10 @@ df <- df %>%
   dplyr::select(rownames(sampleTable))
 rm(keep) #Remove because big size, not necessary to keep variable keep
 ```
-To perform the WGCNA, I am going to get the count matrix as a DESeq object, and remove the covariates effect:
+
+To perform the WGCNA, I am going to get the count matrix as a DESeq
+object, and remove the covariates effect:
+
 ```{r eval = FALSE}
 #Get a DeSeq object
 dds <- DESeqDataSetFromMatrix(countData = df, colData = sampleTable, 
@@ -817,8 +1028,13 @@ datExpr <- as.data.frame(t(df_norm))
   datExpr <- as.data.frame(t(df_norm))
 }
 ```
-Though the data we expect the working data to have a very good quality, we are going to remove the samples or genes that present a missing value. The function gooSmaplesGenes() from WGNA package can easily detect this:
-```{r}
+
+Though the data we expect the working data to have a very good quality,
+we are going to remove the samples or genes that present a missing
+value. The function gooSmaplesGenes() from WGNA package can easily
+detect this:
+
+```{r eval = FALSE}
 #Remove genes and samples with many missing values
 gsg <- goodSamplesGenes(datExpr, verbose = 3)
 
@@ -834,7 +1050,10 @@ if (!gsg$allOK){
   datExpr <- datExpr[gsg$goodSamples, gsg$goodGenes]
 }
 ```
-It would be interesting to plot the samples to detect any obvious outlier:
+
+It would be interesting to plot the samples to detect any obvious
+outlier:
+
 ```{r eval = FALSE}
 sampleTree <- hclust(dist(datExpr), method = 'average')
 jpeg(file = samtreeF)
@@ -843,19 +1062,337 @@ title <- "Sample clustering to detect outliers"
 plot(sampleTree, main = title, cex.lab = 1.5, cex.axis = 1.5, cex.main = 2)
 invisible(dev.off())
 ```
-![Figure X: Sample distance tree by hierarchical clustering](results_WGCNA/sampleClustering.jpeg)
-There are no obvious outliers.
-The configuration table with the parameters as well as the object of counts.
+
+![Figure X: Sample distance tree by hierarchical
+clustering](results_WGCNA/sampleClustering.jpeg) There are no obvious
+outliers. The configuration table with the parameters as well as the
+object of counts.
+
 ```{r eval = FALSE}
 save(datExpr, sampleTable, file = finalresults)
 ```
+
 ## Part 2: Network construction
 
-dd
+The next step is to construct the gene network. WGCNA makes a similarity
+matrix of all genes against each other: the similarity i calculated from
+the correlation of expression of both genes. The network can be signed,
+if only positive correlations are considered. Then the similarity matrix
+is transformed into an adjacency matrix by setting a threshold. When it
+is chosen a hard threshold, the corrleation value is dichotomized; 1 if
+the similarity is above 𝝉, 0 otherwise. This result in an unweighted
+network, and a considerably great loss of information. It is often used
+the soft threshold: the similarity values are rised to a power. To get
+the value of this power 𝛃, the scale free topology criterion is used:
+the smallest 𝛃 to which he network reaches a scale free topology. A
+scale free network is one in which there are large hubs very
+interconnected and the degree distribution follows, at least
+approximately, a power law. The degree of a node is the number of nodes
+to which is connected and the degree distribution is the probability
+distribution of the degrees of a network. I am going to manually
+construct a signed network, by soft thresholding, though there are
+functions for automatic constructions that I will as well demonstrate.
+
+First, regarding the parameters:
+
+```{r eval = FALSE}
+#Parameters
+sign <- T #signed or unsigned network
+Rcutoff <- 0.9 #R^2 cut off for scle free network
+powers <- c(c(1:10), seq(from = 12, to=20, by=2)) #possible thresholds
+minMod <- 15 #Set minimum module size for preliminar-manual and automatic construction
+autoNC <- F #make automatic network construction or not
+MEDissThr <- 0.25 #threshold to which merge modules in manual construction
+#height cut of 0.25 which corresponds to a correlation of 75% among modules
+```
+
+Regarding the files and paths:
+
+```{r eval = FALSE}
+workingD <- rstudioapi::getActiveDocumentContext()$path
+setwd(dirname(workingD))
+
+#Input/output
+filesD <- 'resultsWGCNA/'
+input <- paste0(filesD,'initialData_datExpr_sampleTable.RData')
+load(file = input)
+
+unsignedSFTF <- paste0(filesD,"softT_unsigned.tiff")
+signedSFTF <- paste0(filesD,"softT_signed.tiff")
+autodendroF <- paste0(filesD,"cluster_dendro_auto_min", minMod, ".tiff")
+autoR <- paste0(filesD, "network_auto.RData")
+tempRdata <- paste0(filesD, 'tom_dissTom_geneTree.RData')
+geneTree1F <- paste0(filesD, 'Preliminar_gene_clustering.pdf')
+clustermodsF <- paste0(filesD, 'Clustering_of_modules.pdf')
+dendroF <- paste0(filesD, 'Gene_dendrogram.pdf')
+resultsR <- paste0(filesD, 'network_manual_construction.RData')
+```
+
+The appropriate soft threshold is different if the network is signed or
+unsigned. To know which is the best 𝛃, the pickSoftThreshold() function
+will analyse the scale free topology for the different values of
+*powers* that we have previously specified. To do this:
+
+```{r eval = FALSE}
+if (sign){
+  sft <- pickSoftThreshold(datExpr, powerVector = powers, networkType = 'signed', 
+                           verbose = 5)
+  filename <- signedSFTF
+} else {
+  sft <- pickSoftThreshold(datExpr, powerVector = powers, 
+                           networkType = 'unsigned', verbose = 5)
+  filename <- unsignedSFTF
+}
+```
+
+A plot of how well does the network fit the topology and the mean
+connectivity will help to visualize and understand the results:
+
+```{r eval = FALSE}
+x <- sft$fitIndices[,1]
+xlab <- "Soft Threshold (power)"
+y1 <- -sign(sft$fitIndices[,3])*sft$fitIndices[,2]
+ylab1 <- "Scale Free Topology Model Fit, signed R^2"
+y2 <- sft$fitIndices[,5]
+ylab2 <- "Mean Connectivity"
+
+cex1 <- 0.9
+tiff(file = filename, units="in", width=5, height=5, res=300)
+par(mfrow = c(1,2))
+
+plot(x, y1, xlab= xlab, ylab= ylab1, type="n", main = paste("Scale independence"))
+text(x, y1, labels=powers, cex=cex1, col="red")
+abline(h=Rcutoff, col="red")
+
+plot(x, y2, xlab=xlab, ylab=ylab2, type="n", main = ylab2)
+text(x, y2, labels=powers, cex=cex1, col="red")
+invisible(dev.off())
+```
+
+In an unsigned network:
+
+![Figure X: Scale free topology fit and mean connectivity in an unsigned
+network](results_WGCNA/network_construction/softT_unsigned.tiff)
+
+In a signed network:
+
+![Figure X: Scale free topology fit and mean connectivity in a signed
+network](results_WGCNA/network_construction/softT_signed.tiff)
+
+Because of this plot, we can say that the lowest power at which the
+network fit the scale free topology in a R\^2 of 0.9 is 12.
+
+```{r eval = FALSE}
+sft_power <- 12
+```
+
+If we want to build automatically a network, we can run the following
+chunk with *autoNC* in **TRUE**.
+
+```{r eval = FALSE}
+if (autoNC){
+  net <- blockwiseModules(datExpr, networkType = 'signed', minModuleSize = minMod,
+                          power = sft_power, randomSeed = 1,
+                          numericLabels = F, verbose = 5)
+  moduleColors <- labels2colors(net$colors)
+  geneTree <- net$dendrograms[[1]]
+#Plot
+  tiff(file = autodendroF)
+  blocks <- moduleColors[net$blockGenes[[1]]]
+  plotDendroAndColors(geneTree, blocks, "Module colors",dendroLabels = FALSE, 
+                      hang = 0.03, addGuide = TRUE, guideHang = 0.05)
+  invisible(dev.off())
+#save results
+  moduleLabels <- net$colors
+  MEs <- net$MEs
+  save(MEs, moduleLabels, moduleColors, geneTree, file = autoR)
+}
+```
+
+### Step by step network construction
+
+Explicar que estas haciendo:
+
+```{r eval = FALSE}
+#co expression similarity and adjacency matrices
+adjac <- adjacency(datExpr, power = sft_power)
+#topological overlap matrix: compute how much directly and indirectly two genes 
+#are coexpressed
+tom <- TOMsimilarity(adjac, TOMType = 'signed', verbose = 5)
+diss_tom <- 1-tom
+#Gene tree plot, by hierarchical clustering
+geneTree <- hclust(as.dist(diss_tom), method = 'average')
+title <- 'Gene clustering on TOM-based dissimilarity'
+plot(geneTree, xlab = '', sub = '', main = title, labels = F, hang = 0.04)
+
+#Save this objects, as running previous commands is very computationally expensive
+#save(tom, diss_tom, geneTree, file = tempRdata)
+#load(file=tempRdata)
+```
+
+que sigue
+
+```{r eval = FALSE}
+#Cut the dendrogram
+dynamicMods <- cutreeDynamic(geneTree, distM = diss_tom, deepSplit =2, 
+                             pamRespectsDendro =F, minClusterSize = minMod)
+table(dynamicMods)
+dynColors <- labels2colors(dynamicMods)
+title <- 'Gene dendrogram and module colors'
+pdf(geneTree1F)
+plotDendroAndColors(geneTree, dynColors, 'Dynamic Tree Cut', dendroLabels = F, 
+                    hang=0.03, addGuide = T, guideHang = 0.05, main = title)
+invisible(dev.off())
+```
+
+que sigue
+
+```{r eval = FALSE}
+#Merge modules with similar expression profile
+MEList <- moduleEigengenes(datExpr, colors = dynColors)
+MEs <-MEList$eigengenes
+MEDiss <- 1-cor(MEs)
+METree <- hclust(as.dist(MEDiss), method = 'average')
+```
+
+que sigue
+
+```{r eval = FALSE}
+#Merge modules with similar expression profile
+MEList <- moduleEigengenes(datExpr, colors = dynColors)
+MEs <-MEList$eigengenes
+MEDiss <- 1-cor(MEs)
+METree <- hclust(as.dist(MEDiss), method = 'average')
+```
+
+que sigue
+
+```{r eval = FALSE}
+merge <- mergeCloseModules(datExpr, dynColors, cutHeight = MEDissThr, verbose = 3)
+mergedColors <- merge$colors
+mergedMEs <- merge$newMEs
+```
+
+que sigue
+
+```{r eval = FALSE}
+#Plot the modules with and without the merging
+pdf(file=dendroF, wi = 20, he = 6)
+plotDendroAndColors(geneTree, cbind(dynColors, mergedColors), 
+                    c('Dynamic Tree Cut','Merged dynamic'),
+                    dendroLabels = F, hang = 0.03, guideHang = 0.05, addGuide = T)
+invisible(dev.off())
+```
+
+que ha asado
+
+Lastly, we will save the results:
+
+```{r eval = FALSE}
+#Save the results
+moduleColors <- mergedColors
+colorOrder <- c('grey', standardColors(n=NULL))
+moduleLabels <- match(moduleColors, colorOrder)-1
+MEs <- mergedMEs
+#Save module colors and labels for subsequent parts
+save(MEs, moduleLabels, moduleColors, geneTree, file=resultsR)
+```
 
 ## Part 3: module membership and gene significance
 
-ss
+objetivo de esta parte
+
+I have to import an extra library for this part, *anRichment*
+[@anRichment; @anRichmentMethods], specifically design for WGCNA, and
+set the files path.
+
+```{r eval = FALSE}
+library(anRichment)
+
+workingD <- rstudioapi::getActiveDocumentContext()$path
+setwd(dirname(workingD))
+
+filesD <- 'results_WGCNA/'
+inputData <- paste0(filesD,'initialData_datExpr_sampleTable.RData')
+inputNet <- paste0(filesD, 'network_manual_construction.RData')
+load(inputData)
+load(inputNet)
+
+modtraitF <- paste0(filesD, "Module-trait_relation.pdf")
+intramodFpref <- paste0(filesD, 'MMandGS/intramodular_')
+geneInfoF <- paste0(filesD, 'genes_info.tsv')
+finalresR <- paste0(filesD, 'summary_sigMods.RData')
+gNumberF <- paste0(filesD, 'genes_in_significant_modules.txt')
+allGenesListF <- paste0(filesD, 'genes_in_modules/all_modules_entrez.txt')
+```
+
+We have to set the variables that ill be used later, thus, the alpha
+value of significance and number of samples.
+
+```{r eval = FALSE}
+nSamples <- nrow(datExpr)
+alpha <- 0.05
+```
+
+The first step is to quantify the module trait association. The
+covariates have to be recoded in a numerical format in order to do so.
+The most important covariate is the *condition*. The quantification of
+other relations besides this trait won' affect the results of the
+*condition* trait, and will let us be sure that the effect of age,
+pedigree and gender have been removed. Technically, if we would want to
+actually know the effect of the pedigree, each family ID should be
+recoded and a comparison group to group should be done.
+
+Pobar poniendo las edades reales de cada muestra
+
+```{r eval = FALSE}
+#Transform qualitative traits to binary code
+levels(sampleTable$condition) <- c(1,0)
+colnames(sampleTable)[4] <- 'is.Affected'
+#We recode the other categorical covariates to check if there is correlation
+#It shouldnt because we already took them into account
+levels(sampleTable$gender) <- c(1,0)
+colnames(sampleTable)[1] <- 'is.Female'
+levels(sampleTable$age) <- c(1,2,0)
+levels(sampleTable)[2] <- 'age_stage'
+```
+
+Now it is time to calculate the correlations between module eigengenes,
+which simplify the expression of each module, and traits. The function
+corAndPvalues() takes into account the number of observations already,
+so no adjustment has to be done afterwards.
+
+```{r eval = FALSE}
+moduleTrait <- corAndPvalue(MEs, sampleTable)
+moduleTraitCor <- moduleTrait$cor
+moduleTraitPvalue <- moduleTrait$p
+```
+
+It would be nice to plot the matrix of both correlations and p values:
+
+```{r eval = FALSE}
+textMatrix <- paste(signif(moduleTraitCor, 2), "\n(",
+                    signif(moduleTraitPvalue, 1), ")", sep = "")
+dim(textMatrix) <- dim(moduleTraitCor)
+```
+
+Plot:
+
+```{r eval = FALSE}
+jpeg(file = modtraitF, width = 700, height = 1600, quality = 100)
+par(mar = c(6, 8.5, 3, 3))
+title <- "Module-trait relationships"
+labeledHeatmap(Matrix = moduleTraitCor,
+               xLabels = names(sampleTable),
+               yLabels = names(MEs),
+               ySymbols = names(MEs),
+               colorLabels = FALSE, colors = blueWhiteRed(50),
+               textMatrix = textMatrix, setStdMargins = FALSE, main = title)
+invisible(dev.off())
+```
+
+![Figure X: Module trait association
+matrix](results_WGCNA/module-trait_relation.jpeg)
 
 ## Part 4: comparison with DGE
 

@@ -12,10 +12,6 @@ suppressPackageStartupMessages({
 options(stringsAsFactors = F)
 enableWGCNAThreads()
 
-#Paths to files
-workingD <- rstudioapi::getActiveDocumentContext()$path
-setwd(dirname(workingD))
-
 #Parameters
 sign <- T #signed or unsigned network
 Rcutoff <- 0.9 #R^2 cut off
@@ -24,6 +20,10 @@ minMod <- 15 #Set minimum module size for preliminar-manual and automatic constr
 autoNC <- F #make automatic network construction
 MEDissThr <- 0.25 #threshold to which merge modules in manual construction
 #height cut of 0.25 which corresponds to a correlation of 75% among modules
+
+#Paths to files
+workingD <- rstudioapi::getActiveDocumentContext()$path
+setwd(dirname(workingD))
 
 #Input/output
 filesD <- 'resultsWGCNA/'
@@ -108,7 +108,6 @@ diss_tom <- 1-tom
 geneTree <- hclust(as.dist(diss_tom), method = 'average')
 title <- 'Gene clustering on TOM-based dissimilarity'
 plot(geneTree, xlab = '', sub = '', main = title, labels = F, hang = 0.04)
-
 
 #Save this objects, as running previous commands is very computationally expensive
 #save(tom, diss_tom, geneTree, file = tempRdata)

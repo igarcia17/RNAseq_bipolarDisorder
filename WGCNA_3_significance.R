@@ -24,7 +24,7 @@ inputNet <- paste0(filesD, 'network_manual_construction.RData')
 load(inputData)
 load(inputNet)
 
-modtraitF <- paste0(filesD, "Module-trait_relation.pdf")
+modtraitF <- paste0(filesD, "module-trait_relation.jpeg")
 intramodFpref <- paste0(filesD, 'MMandGS/intramodular_')
 geneInfoF <- paste0(filesD, 'genes_info.tsv')
 finalresR <- paste0(filesD, 'summary_sigMods.RData')
@@ -56,11 +56,11 @@ moduleTraitPvalue <- moduleTrait$p
 
 #Get all together:
 textMatrix <- paste(signif(moduleTraitCor, 2), "\n(",
-                    signif(moduleTraitPvalue, 1), ")", sep = "");
+                    signif(moduleTraitPvalue, 1), ")", sep = "")
 dim(textMatrix) <- dim(moduleTraitCor) #give shape
 
 #Graphical representation:
-pdf(file = modtraitF, height = 20, width = 10)
+jpeg(file = modtraitF, width = 700, height = 1600, quality = 100)
 par(mar = c(6, 8.5, 3, 3))
 title <- "Module-trait relationships"
 labeledHeatmap(Matrix = moduleTraitCor,
