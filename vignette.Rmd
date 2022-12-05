@@ -332,7 +332,7 @@ match.
 The DGE analysis aims to detect if there are any differentially
 expressed genes between the affected and unaffected individuals. To
 proceed first step is to load the libraries[@rstudioapi; @gplots;
-@ggplot2; @pheatmap; @DESeq2; @org.Hs.eg.db; @EnhancedVolcano;
+@ggplot2; @pheatmap; @DESeq2; \@org.Hs.eg.db; @EnhancedVolcano;
 @ggrepel]. This script is based on the one used in the Genomics
 assistance unit of the CBMSO, done by Ramón Peiró-Pastor, Eva Castillo
 Rosa, Eva Sacristán and Sandra González, inspired on the draft of
@@ -467,7 +467,8 @@ plotDispEsts(dds, main=title)
 invisible(dev.off())
 ```
 
-![Figure X: Per-gene dispersion estimates](results_DGE/dispersion.tiff)
+![Figure X: Per-gene dispersion
+estimates](results_DGE/dispersion.tiff){width="14.81cm" height="12.89cm"}
 
 Though very crowded, it can be seen that most genes, specially with
 dispersions below the fitted expected curve, have been recalculated: the
@@ -530,7 +531,7 @@ pca + ggtitle(title) + geom_text_repel(aes(label=colnames(vst)),size=1)
 invisible(dev.off())
 ```
 
-![Figure X: PCA](results_DGE/PCA.tiff)
+![Figure X: PCA](results_DGE/PCA.jpeg)
 
 No clusters separating unaffected and affected individuals are found,
 and this is expected: both groups share much of their genetic
@@ -821,8 +822,8 @@ dotplot(egs, x = "GeneRatio", color = "p.adjust", showCategory = 20,
 invisible(dev.off())
 ```
 
-![Figure X: dot plot with GSEA
-categories](results_GSEA/GO_BP/dotplot.jpeg) This dot plot shows the
+![Figure X: dot plot with
+GSEAcategories](results_GSEA/GO_BP/dotplot.jpeg) This dot plot shows the
 fours significant categories, ordered by gene ratio. Each dot is colored
 by adjusted p value, being the category 'immunoglobulin production' the
 most significant. The size of each dot shows the count of core

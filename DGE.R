@@ -18,19 +18,20 @@ setwd(dirname(workingD))
 #Input
 configFile <- 'configfile.txt'
 #Outputs
-resD <- 'resultsDGE/'
+resD <- 'results_DGE/'
 rawCountsF <- paste0(resD,"counts_raw.tsv")
 normCountsF <- paste0(resD,"counts_normalized.tsv")
-PCAF <- paste0(resD,"PCA.tiff")
-distancesF <- paste0(resD,"distances.tiff")
+PCAF <- paste0(resD,"PCA.jpeg")
+distancesF <- paste0(resD,"distances.jpeg")
 dispersionF <- paste0(resD,"dispersion.tiff")
-MAplotF <- paste0(resD,"maplot.tiff")
+MAplotF <- paste0(resD,"maplot.jpeg")
 genesTSV <- paste0(resD,"all_genes.tsv")
 sigTSV <- paste0(resD,"sig_pval.tsv")
-sigPCAF <- paste0(resD,"PCA_sig.tiff")
+sigPCAF <- paste0(resD,"PCA_sig.jpeg")
 alphasigTSV <- paste0(resD,"0.05_sig_padj.tsv")
 volcanoF <- paste0(resD,"volcanoPlot.jpeg")
 heatmapF <- paste0(resD,"heatmap.jpeg")
+DESEqResultsF <- paste0(resD, 'deseq_objects.RData')
 
 #Parameters
 cutoff <- 0.05 #significancy p value adjusted
@@ -69,6 +70,8 @@ write.table(dds_raw, file=rawCountsF, quote=FALSE,
              sep = "\t", col.names=NA)
 write.table(dds_normalized, file=normCountsF, quote=FALSE, 
              sep = "\t", col.names=NA)
+#Save DESeq results for GSEA
+save(dds, file = DESEqResultsF)
 
 #PCA: blind must be FALSE to take into account batch effect
 if (covs) {
@@ -84,11 +87,14 @@ if (covs) {
   mat <- assay(vst)
 }
 
-tiff(filename = PCAF, units="in", width=5, 
-     height=5, res=300)
+jpeg(filename = PCAF, width=900, height=900, quality=300)
 pca <- plotPCA(vst)
 title <- "Principal Components Plot"
-pca + ggtitle(title) + geom_text_repel(aes(label=colnames(vst)),size=1)
+pca + ggtitle(title) + 
+  geom_point(size = 6) +
+  theme(plot.title = element_text(size=40, hjust = 0.5, face = "bold"), axis.title=element_text(size=20),
+        legend.text=element_text(size=15),legend.title=element_text(size=15)) +
+  geom_text_repel(aes(label=colnames(vst)), size=5, point.padding = 0.6)
 invisible(dev.off())
 
 #Distances between samples
@@ -97,7 +103,7 @@ distMat <- as.matrix(distRL)
 hc <- hclust(distRL)
 hmcol <- colorRampPalette(c("white", "blue"))(299)
 title <- "Distances matrix"
-tiff(filename = distancesF, units="in", width=5, height=5, res=200)
+jpeg(filename = distancesF, width=900, height=900, quality=300)
 heatmap.2(distMat, Rowv=as.dendrogram(hc), symm=TRUE, trace="none", col=rev(hmcol),
           margin=c(10, 6), main=title, key.title=NA)
 invisible(dev.off())
@@ -113,8 +119,8 @@ invisible(dev.off())
 levels <- unique(sampleTable$condition)
 l1 <- toString(levels[2]) #reference level has to be Unaffected
 l2 <- toString(levels[1])
-
 suffix <- paste(l1, l2, sep="_vs_")
+
 #Get results
 res <- results(dds, contrast=c("condition", l2, l1))
 res$FoldChange <- 2^res$log2FoldChange  #have actual fold change
@@ -123,7 +129,13 @@ res <- res[colnames(res)[c(1,7,2:6)]] # order columns
 # MAplot
 tiff(filename = MAplotF, units="in", width=5, height=5, res=300)
 title <- paste("MA-plot", suffix, sep=" ")
-plotMA(res, alpha= 0.05, main=title)
+plotMA(res, alpha= 0.05, main=title, colSig = 'red')
+invisible(dev.off())
+
+
+jpeg(filename = MAplotF, width=900, height=900, quality=300)
+title <- paste("MA-plot", suffix, sep=" ")
+plotMA(res, alpha= cutoff, main=title, colSig = 'red', cex = 1.2)
 invisible(dev.off())
 
 #Add annotation to results
@@ -159,11 +171,15 @@ mat_sig <- limma::removeBatchEffect(mat_sig,
                                 batch3=vst_sig$age, design=mm_sig)
 assay(vst_sig) <- mat_sig
 
-tiff(filename = sigPCAF, units="in", width=5, 
-     height=5, res=300)
+jpeg(filename = sigPCAF, width=900, height=900, quality=300)
 pca_sig <- plotPCA(vst_sig)
 title <- "PCA - only significant genes"
-pca_sig + ggtitle(title) + geom_text_repel(aes(label=colnames(vst_sig)), size=1.5)
+pca_sig + ggtitle(title) + 
+  geom_point(size = 6) +
+  theme(plot.title = element_text(size=40, hjust = 0.5, face = "bold"), 
+        axis.title=element_text(size=20),
+        legend.text=element_text(size=15),legend.title=element_text(size=15)) +
+  geom_text_repel(aes(label=colnames(vst_sig)), size=5, point.padding = 0.6)
 invisible(dev.off())
 
 write.table (significant, file=alphasigTSV, quote=FALSE, sep="\t", col.names=NA)

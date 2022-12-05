@@ -16,8 +16,8 @@ setwd(dirname(workingD))
 #Input
 input <- 'results_DGE/all_genes.tsv'
 #Outputs
-resD <- 'results_GSEA/GO_BP/'
-resTSV <- paste0(resD,'GSEA_results.txt')
+resD <- 'results_GSEA/prueba/'
+resTSV <- paste0(resD,'GSEA_results_HPOwithStat.txt')
 dotplotF <- paste0(resD, "dotplot.jpeg")
 geneconceptF <- paste0(resD,"gene_concept_net.jpeg")
 ridgeF <- paste0(resD,"GSEA_ridge.jpeg")
@@ -27,13 +27,13 @@ gseaplotsF <- paste0(resD,'all_gseaplots.jpeg')
 #Parameters
 #Which database inside msigdbr?
 category <- 'C5'
-subcategory <- 'GO:BP'
+subcategory <- 'HPO'
 #Plot the x top categories
 topCat <- 10
 
 #Load data
 data <- read.delim(input, sep= "\t", header=T, row.names = 1)
-dat <- data$log2FoldChange
+dat <- data$stat
 names(dat) <- as.character(rownames(data))
 dat <- sort(dat, decreasing=TRUE)
 
