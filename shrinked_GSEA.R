@@ -13,8 +13,9 @@ suppressPackageStartupMessages({
 
 #Parameters
 #Which database inside msigdbr?
-category <- 'C2'
-subcategory <- 'KEGG'
+category <- 'C7'
+subcategory <- NULL
+#msigdbr_collections()
 #Plot the x top categories
 topCat <- 5
 
@@ -25,8 +26,8 @@ setwd(dirname(workingD))
 input <- 'results_DGE/deseq_objects.RData'
 
 #Outputs
-resD <- 'results_GSEA/'
-resD <- paste0(resD,category,'_', subcategory,'/')
+resD0 <- 'results_GSEA/'
+resD <- gsub(':','_',paste0(resD0,category,'_', subcategory, '/'))
 if (!file.exists(resD)){
   dir.create(file.path(resD))
 }
@@ -56,7 +57,7 @@ head(db_sets) #each gene associated with each msig group
 #Perform GSEA
 set.seed(1)
 egs <- GSEA(geneList = dat, pvalueCutoff = 0.05, eps = 0, pAdjustMethod = "BH", 
-            seed = T, TERM2GENE = db_sets, pc) #for more accurate p value set eps to 0
+            seed = T, TERM2GENE = db_sets) #for more accurate p value set eps to 0
 #https://bioconductor.org/packages/release/bioc/vignettes/fgsea/inst/doc/fgsea-tutorial.html 
 #head(egs@result)
 egs_df <- data.frame(egs@result)
