@@ -11,26 +11,32 @@ suppressPackageStartupMessages({
   library(ggplot2)
 })
 
+#Parameters
+#Which database inside msigdbr?
+category <- 'C2'
+subcategory <- 'KEGG'
+#Plot the x top categories
+topCat <- 5
+
 #Paths
 workingD <- rstudioapi::getActiveDocumentContext()$path
 setwd(dirname(workingD))
 #Input
 input <- 'results_DGE/deseq_objects.RData'
+
 #Outputs
-resD <- 'results_GSEA/shrinkedLog2Fold/'
+resD <- 'results_GSEA/'
+resD <- paste0(resD,category,'_', subcategory,'/')
+if (!file.exists(resD)){
+  dir.create(file.path(resD))
+}
+
 resTSV <- paste0(resD,'GSEA_results.txt')
 dotplotF <- paste0(resD, "dotplot.jpeg")
 geneconceptF <- paste0(resD,"gene_concept_net.jpeg")
 ridgeF <- paste0(resD,"GSEA_ridge.jpeg")
 upsetF <- paste0(resD,"upset_plot.jpeg")
 gseaplotsF <- paste0(resD,'all_gseaplots.jpeg')
-
-#Parameters
-#Which database inside msigdbr?
-category <- 'H'
-subcategory <- NULL
-#Plot the x top categories
-topCat <- 5
 
 #1) Load data
 load(input)
@@ -49,13 +55,14 @@ head(db_sets) #each gene associated with each msig group
 
 #Perform GSEA
 set.seed(1)
-egs <- GSEA(geneList = dat, pvalueCutoff = 0.05, eps = 1e-10, pAdjustMethod = "BH", 
-            seed = T, TERM2GENE = db_sets)
+egs <- GSEA(geneList = dat, pvalueCutoff = 0.05, eps = 0, pAdjustMethod = "BH", 
+            seed = T, TERM2GENE = db_sets, pc) #for more accurate p value set eps to 0
+#https://bioconductor.org/packages/release/bioc/vignettes/fgsea/inst/doc/fgsea-tutorial.html 
 #head(egs@result)
 egs_df <- data.frame(egs@result)
 egs_df <- egs_df[, -c(1,2)]
 
-write.table(egs_df, file = paste0(resTSV,'H.txt'), sep= "\t", quote = F, row.names = T)
+write.table(egs_df, file = resTSV, sep= "\t", quote = F, row.names = T)
 
 #Reconsider the top category number if there are less terms than especified
 if (dim(egs_df)[1] < topCat){
