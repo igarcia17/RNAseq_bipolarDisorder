@@ -13,9 +13,11 @@ suppressPackageStartupMessages({
 
 #Parameters
 #Which database inside msigdbr?
-category <- 'C7'
+category <- 'H'
 subcategory <- NULL
 #msigdbr_collections()
+#Will you use stat parameter for ordering or the shrinked log2fold change?
+statP <- F
 #Plot the x top categories
 topCat <- 5
 
@@ -27,7 +29,12 @@ input <- 'results_DGE/deseq_objects.RData'
 
 #Outputs
 resD0 <- 'results_GSEA/'
-resD <- gsub(':','_',paste0(resD0,category,'_', subcategory, '/'))
+if (statP){
+  resD1 <- paste0(resD0,'stat/')
+} else {
+  resD1 <- paste0(resD0, 'log2fold/')
+}
+resD <- gsub(':','_',paste0(resD1,category,'_', subcategory, '/'))
 if (!file.exists(resD)){
   dir.create(file.path(resD))
 }
@@ -42,10 +49,18 @@ gseaplotsF <- paste0(resD,'all_gseaplots.jpeg')
 #1) Load data
 load(input)
 
-shrink <- lfcShrink(dds, coef = 12, type="apeglm", quiet =T)
-dat <- shrink$log2FoldChange
-names(dat) <- as.character(rownames(shrink))
-dat <- sort(dat, decreasing=TRUE)
+if(statP){
+  res <- results(dds)
+  res <- res[complete.cases(res),]
+  dat <- res$stat
+  names(dat) <- as.character(rownames(res))
+  dat <- sort(dat, decreasing=TRUE)
+} else {
+  shrink <- lfcShrink(dds, coef = 12, type="apeglm", quiet =T)
+  dat <- shrink$log2FoldChange
+  names(dat) <- as.character(rownames(shrink))
+  dat <- sort(dat, decreasing=TRUE)
+}
 
 #2) Calculate GSEA and write tables of results
 #Get genes and categories
