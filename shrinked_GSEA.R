@@ -13,11 +13,13 @@ suppressPackageStartupMessages({
 
 #Parameters
 #Which database inside msigdbr?
-category <- 'H'
-subcategory <- NULL
+category <- 'C2'
+subcategory <- 'CP:REACTOME'
 #msigdbr_collections()
 #Will you use stat parameter for ordering or the shrinked log2fold change?
-statP <- F
+#Log2fold is traditional statistic, but lately t statistic has been more recommended
+#https://www.biorxiv.org/content/10.1101/060012v3.full.pdf
+statP <- T
 #Plot the x top categories
 topCat <- 5
 
