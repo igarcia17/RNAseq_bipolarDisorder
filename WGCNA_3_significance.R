@@ -52,7 +52,7 @@ levels(sampleTable)[2] <- 'age_stage'
 #Calculate correlations and p values taking into account # observations
 moduleTrait <- corAndPvalue(MEs, sampleTable)
 moduleTraitCor <- moduleTrait$cor
-moduleTraitPvalue <- moduleTrait$p
+moduleTraitPvalue <- p.adjust(moduleTrait$p, method = 'BH') #####
 
 #Get all together:
 textMatrix <- paste(signif(moduleTraitCor, 2), "\n(",
@@ -95,6 +95,13 @@ names(geneTraitSignificance) <- paste("GS.", names(condition), sep="")
 GSPvalue <- geneSignif$p
 GSPvalue <- as.data.frame(GSPvalue)
 names(GSPvalue) <- paste("p.GS.", names(condition), sep="")
+
+#P adjusted?
+#WGCNA alleviates the multiple testing problem inherent in microarray data analysis.
+# Instead of relating thousands of genes to a microarray sample trait, it focuses on the relationship between a few (typically less than 10)
+# modules and the sample trait. Toward this end, it calculates the eigengene significance (correlation between sample trait and eigengene)
+# and the corresponding p-value for each module
+
 
 #C) Intramodular analysis
 
@@ -163,6 +170,7 @@ geneInfo <- geneInfo[geneOrder, ]
 write.table(geneInfo, file = geneInfoF, sep = "\t", row.names = T, col.names = NA,
             quote = F)
 
+#Una cosa interesante: ver que genes significativos hay en cada modulo significativo https://www.biostars.org/p/9482927/
 
 ###ANNOTATION
 #Save the genes present in each significant module, but this time in EntrezID

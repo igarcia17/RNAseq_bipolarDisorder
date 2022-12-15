@@ -18,7 +18,7 @@ setwd(dirname(workingD))
 
 #Input
 inputC <- 'configfile.txt'
-inputTSV <- 'results_DGE/counts_raw.tsv'
+inputTSV <- 'results_DGE/counts_raw.tsv' #se normalizan luego
 
 #Outputs
 resD <- 'results_WGCNA/'
@@ -54,13 +54,11 @@ mm <- model.matrix(~condition, colData(dds_norm))
 df_norm <- limma::removeBatchEffect(df_norm,
                                     batch=dds_norm$PED, batch2=dds_norm$gender,
                                     batch3=dds_norm$age, design=mm)
-datExpr <- as.data.frame(t(df_norm))
 } else {
   dds_norm <- vst(dds, blind = FALSE)
   df_norm <- assay(dds_norm)
-  datExpr <- as.data.frame(t(df_norm))
 }
-
+datExpr <- as.data.frame(t(df_norm))
 #Quality control
 #Remove genes and samples with many missing values
 gsg <- goodSamplesGenes(datExpr, verbose = 3)
