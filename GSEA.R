@@ -3,6 +3,7 @@
 
 suppressPackageStartupMessages({
   library(rstudioapi)
+  library(DESeq2)
   library(clusterProfiler, quietly = TRUE)
   library(msigdbr, quietly = T)
   library(UpSetR, quietly = TRUE)
@@ -10,35 +11,61 @@ suppressPackageStartupMessages({
   library(ggplot2)
 })
 
+#Parameters
+#Which database inside msigdbr?
+category <- 'H'
+subcategory <- NULL
+#msigdbr_collections()
+#Will you use stat parameter for ordering or the shrinked log2fold change?
+#Log2fold is traditional statistic, but lately t statistic has been more recommended
+#https://www.biorxiv.org/content/10.1101/060012v3.full.pdf
+statP <- T
+#Plot the x top categories
+topCat <- 15
+
 #Paths
 workingD <- rstudioapi::getActiveDocumentContext()$path
 setwd(dirname(workingD))
 #Input
-input <- 'results_DGE/all_genes.tsv'
+input <- 'results_DGE/deseq_objects.RData'
+
 #Outputs
-resD <- 'results_GSEA/prueba/'
-resTSV <- paste0(resD,'GSEA_results_HPOwithStat.txt')
+resD0 <- 'results_GSEA/'
+if (statP){
+  resD1 <- paste0(resD0,'stat/')
+} else {
+  resD1 <- paste0(resD0, 'log2fold/')
+}
+resD <- gsub(':','_',paste0(resD1,category,'_', subcategory, '/'))
+if (!file.exists(resD)){
+  dir.create(file.path(resD))
+}
+
+resTSV <- paste0(resD,'GSEA_results.txt')
 dotplotF <- paste0(resD, "dotplot.jpeg")
 geneconceptF <- paste0(resD,"gene_concept_net.jpeg")
 ridgeF <- paste0(resD,"GSEA_ridge.jpeg")
 upsetF <- paste0(resD,"upset_plot.jpeg")
 gseaplotsF <- paste0(resD,'all_gseaplots.jpeg')
 
-#Parameters
-#Which database inside msigdbr?
-category <- 'C5'
-subcategory <- 'HPO'
-#Plot the x top categories
-topCat <- 10
+#1) Load data
+load(input)
 
-#Load data
-data <- read.delim(input, sep= "\t", header=T, row.names = 1)
-dat <- data$stat
-names(dat) <- as.character(rownames(data))
-dat <- sort(dat, decreasing=TRUE)
+if(statP){
+  res <- results(dds)
+  res <- res[complete.cases(res),]
+  dat <- res$stat
+  names(dat) <- as.character(rownames(res))
+  dat <- sort(dat, decreasing=TRUE)
+} else {
+  shrink <- lfcShrink(dds, coef = 12, type="apeglm", quiet =T)
+  dat <- shrink$log2FoldChange
+  names(dat) <- as.character(rownames(shrink))
+  dat <- sort(dat, decreasing=TRUE)
+}
 
-#Calculate GSEA and write tables of results
-#get genes and categories
+#2) Calculate GSEA and write tables of results
+#Get genes and categories
 db_sets <- msigdbr(species = 'Homo sapiens', category = category, 
                    subcategory = subcategory)%>% 
   dplyr::select(gs_name, ensembl_gene)
@@ -47,7 +74,8 @@ head(db_sets) #each gene associated with each msig group
 #Perform GSEA
 set.seed(1)
 egs <- GSEA(geneList = dat, pvalueCutoff = 0.05, eps = 0, pAdjustMethod = "BH", 
-            seed = T, TERM2GENE = db_sets)
+            seed = T, TERM2GENE = db_sets) #for more accurate p value set eps to 0
+#https://bioconductor.org/packages/release/bioc/vignettes/fgsea/inst/doc/fgsea-tutorial.html 
 #head(egs@result)
 egs_df <- data.frame(egs@result)
 egs_df <- egs_df[, -c(1,2)]
@@ -78,7 +106,8 @@ invisible(dev.off())
 ##Ridge line plot
 jpeg(file = ridgeF, units = 'in', width = 15, height = 10, res = 300)
 par(mar = c(2, 2, 2, 5)) 
-ridgeplot(egs, fill="p.adjust", orderBy= 'NES', core_enrichment = T)
+ridgeplot(egs, fill="p.adjust", orderBy= 'NES', core_enrichment = T, 
+          showCategory = topCat)
 invisible(dev.off())
 
 ##Upset plot (of the 10 first terms)
@@ -114,7 +143,7 @@ invisible(dev.off())
 
 ###Plot the first 5 more abundant terms or all if there are less hits
 
-for (j in 1:numPlots){
+for (j in 1:topCat){
   pl <- gseaplot2(egs, geneSetID=j, title = egs$Description[j], base_size=40, color="red")
   desc <- gsub(" ", "_", egs$Description[j], fixed = TRUE) 
   filename <- paste0(resD, desc, ".jpeg")
