@@ -7,7 +7,7 @@ suppressPackageStartupMessages({
   library(dplyr, quietly = T)
   library(ggplot2, quietly = T)
   library(WGCNA, quietly = T)
-  #library(org.Hs.eg.db, quietly = T)
+  library(org.Hs.eg.db, quietly = T)
   library(anRichment)
 })
 
@@ -24,12 +24,13 @@ inputNet <- paste0(filesD, 'network_manual_construction.RData')
 load(inputData)
 load(inputNet)
 
-modtraitF <- paste0(filesD, "module-trait_relation.jpeg")
-intramodFpref <- paste0(filesD, 'MMandGS/intramodular_')
-geneInfoF <- paste0(filesD, 'genes_info.tsv')
-finalresR <- paste0(filesD, 'summary_sigMods.RData')
-gNumberF <- paste0(filesD, 'genes_in_significant_modules.txt')
-allGenesListF <- paste0(filesD, 'genes_in_modules/all_modules_entrez.txt')
+subD <- 'prueba/'
+modtraitF <- paste0(filesD, subD, "module-trait_relation.jpeg")
+intramodFpref <- paste0(filesD, subD, 'MMandGS/intramodular_')
+geneInfoF <- paste0(filesD, subD, 'genes_info.tsv')
+finalresR <- paste0(filesD, subD, 'summary_sigMods.RData')
+gNumberF <- paste0(filesD, subD, 'genes_in_significant_modules.txt')
+allGenesListF <- paste0(filesD, subD, 'genes_in_modules/all_modules_entrez.txt')
 
 #Parameters
 nSamples <- nrow(datExpr)
@@ -52,7 +53,7 @@ levels(sampleTable)[2] <- 'age_stage'
 #Calculate correlations and p values taking into account # observations
 moduleTrait <- corAndPvalue(MEs, sampleTable)
 moduleTraitCor <- moduleTrait$cor
-moduleTraitPvalue <- p.adjust(moduleTrait$p, method = 'BH') #####
+moduleTraitPvalue <- moduleTrait$p
 
 #Get all together:
 textMatrix <- paste(signif(moduleTraitCor, 2), "\n(",
@@ -130,21 +131,23 @@ for (mod in sigMods){
 }
 
 #D) Summary output
+genes <- names(datExpr)
+symbol <- mapIds(org.Hs.eg.db, keys = genes, column = 'SYMBOL', 
+                 keytype = 'ENSEMBL', multiVals = 'first')
+
 #Save the genes present in each significant module
 for (mod in sigMods){
   modGenes <- (moduleColors==mod)
   modGenes <- symbol[modGenes]
-  filename <- paste(filesD,"genes_in_modules/genes-", mod, ".txt", sep="");
+  filename <- paste(filesD,subD, "genes_in_modules/genes-", mod, ".txt", sep="");
   write.table(as.data.frame(modGenes), file = filename, quote = F,
               row.names = FALSE, col.names = FALSE)
   geneNumber <- length(modGenes)
   line <- paste0('Module ', mod, ': ', geneNumber)
   write(line, file = gNumberF, append = T)
 }
+
 #Gene information data frame
-genes <- names(datExpr)
-symbol <- mapIds(org.Hs.eg.db, keys = genes, column = 'SYMBOL', 
-                 keytype = 'ENSEMBL', multiVals = 'first')
 geneInfo <- data.frame(geneSymbol = symbol, moduleColor = moduleColors, 
                         geneTraitSignificance, GSPvalue)
 # Order modules by their significance for the condition
@@ -170,16 +173,104 @@ geneInfo <- geneInfo[geneOrder, ]
 write.table(geneInfo, file = geneInfoF, sep = "\t", row.names = T, col.names = NA,
             quote = F)
 
-#Una cosa interesante: ver que genes significativos hay en cada modulo significativo https://www.biostars.org/p/9482927/
+#Una cosa interesante: ver que genes significativos hay en cada modulo 
+#significativo https://www.biostars.org/p/9482927/
 
 ###ANNOTATION
+
+#Save general summary results for farther experiments
+save(geneInfo, sigMods, file = finalresR)
+
+
+###Over Representation Analysis
+library(clusterProfiler)
+library(msigdbr)
+
+gene_module_df <- data.frame(rownames(geneInfo), geneInfo$moduleColor)
+colnames(gene_module_df) <- c('gene', 'module')
+hs_msigdb_df <- msigdbr(species = 'Homo sapiens', category = 'C5', 
+                   subcategory = NULL)%>% 
+  dplyr::select(gs_name, ensembl_gene)
+background_set <- unique(as.character(gene_module_df$gene))
+
+subsubD <- 'enriching/'
+
+for (mod in sigMods){
+  active_genes <- gene_module_df %>%
+    dplyr::filter(module == mod) %>%
+    dplyr::pull("gene")
+  active_genes <- unique(as.character(active_genes))
+  enriching <- enricher(gene = active_genes,
+                        pvalueCutoff = 0.1,
+                        pAdjustMethod = "BH",
+                        universe = background_set,
+                        TERM2GENE = hs_msigdb_df)
+  enrich_res <- data.frame(enriching@result)
+  
+  write.table(enrich_res, file = paste0(filesD, subD, subsubD,'enrich_results_', mod, '.txt'),
+              quote = F, row.names=F, col.names=T)
+  
+  if(nrow(enrich_res) == 0){
+    message <- paste0('The module ', mod, ' doesnt have enriched terms')
+    print(message)
+  } else {
+  enrich_res_sig <- enrich_res %>%
+    dplyr::filter(p.adjust < alpha)
+  enrich_plot <- enrichplot::dotplot(enriching) #Cómo guardarlo sin que pete
+
+  if (is.null(enrich_res_sig)){
+    message <- paste0('The module ', mod, ' doesnt have significantly enriched terms')
+    print(message)
+  } else {
+    write.table(enrich_res_sig, file = paste0(filesD, subD, subsubD, 'enrich_results_sig_', mod, '.txt'),
+                quote = F, row.names=F, col.names=T)
+  }
+
+}}
+
+#https://alexslemonade.github.io/refinebio-examples/03-rnaseq/pathway-analysis_rnaseq_01_ora.html#4_Over-Representation_Analysis_with_clusterProfiler_-_RNA-seq
+
+active_genes <- gene_module_df %>%
+  dplyr::filter(module == mod) %>%
+  dplyr::pull("gene")
+active_genes <- unique(as.character(active_genes))
+enriching <- enricher(gene = active_genes,
+                      pvalueCutoff = 0.1,
+                      pAdjustMethod = "BH",
+                      universe = background_set,
+                      # The pathway information should be a data frame with a term name or
+                      # identifier and the gene identifiers
+                      TERM2GENE = hs_msigdb_df)
+enrich_res <- data.frame(enriching@result)
+enrich_res_sig <- enrich_res %>%
+  dplyr::filter(p.adjust < alpha)
+enrich_plot <- enrichplot::dotplot(enriching)
+upset_plot <- enrichplot::upsetplot(enriching)
+
+write.table(enrich_res, file = paste0(dirD, subD, 'enrich_results_', mod, '.txt'),
+            quote = F, row.names=F, col.names=F)
+write.table(enrich_res_sig, file = paste0(dirD, subD, 'enrich_results_sig_', mod, '.txt'),
+            quote = F, row.names=F, col.names=F)
+ggplot2::ggsave(file.path(dirD, subD, "ora_enrichplot_", mod, ".png"),
+                plot = enrich_plot)
+ggplot2::ggsave(file.path(dirD, subD, "ora_upsetplot_", mod, ".png"),
+                plot = upset_plot)
+
+
+
+
+
+
+
+
+###########################3
 #Save the genes present in each significant module, but this time in EntrezID
 entrez <- mapIds(org.Hs.eg.db, keys = genes, column = 'ENTREZID', keytype = 'ENSEMBL', 
                  multiVals = 'first')
 for (mod in sigMods){
   modGenes <- (moduleColors==mod)
   modGenes <- entrez[modGenes]
-  filename <- paste(filesD,"genes_in_modules/genes-Entrez-", mod, ".txt", sep="");
+  filename <- paste(filesD,subD,"genes_in_modules/genes-Entrez-", mod, ".txt", sep="");
   write.table(as.data.frame(modGenes), file = filename, quote = F,
               row.names = FALSE, col.names = FALSE)
 }
@@ -192,16 +283,12 @@ GOcollection <- buildGOcollection(organism = "human")
 for (mod in sigMods){
   active <- entrez[moduleColors==mod]
   enrichmnt <- enrichmentAnalysis(active = active, inactive = entrez,
-                                           refCollection = GOcollection,
-                                           useBackground = "intersection",
-                                           threshold = 1e-4,
-                                           thresholdType = "Bonferroni");
+                                  refCollection = GOcollection,
+                                  useBackground = "intersection",
+                                  threshold = 1e-4,
+                                  thresholdType = "Bonferroni");
   enr_table <- enrichmnt$enrichmentTable
-  terms <- enr_table$dataSetName
-  filename <- paste0(filesD,"enriched_terms/terms_", mod, ".txt")
-  write.table(as.data.frame(terms), file = filename, quote = F,
+  filename <- paste0(filesD, subD, "enriched_terms/terms_", mod, ".txt")
+  write.table(as.data.frame(enr_table), file = filename, quote = F,
               row.names = FALSE, col.names = FALSE)
 }
-
-#Save general summary results for farther experiments
-save(geneInfo, sigMods, file = finalresR)
