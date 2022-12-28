@@ -144,10 +144,10 @@ invisible(dev.off())
 ###Plot the first 5 more abundant terms or all if there are less hits
 
 for (j in 1:topCat){
-  pl <- gseaplot2(egs, geneSetID=j, title = egs$Description[j], base_size=40, color="red")
+  plot <- gseaplot2(egs, geneSetID=j, title = egs$Description[j], base_size=40, color="red")
   desc <- gsub(" ", "_", egs$Description[j], fixed = TRUE) 
   filename <- paste0(resD, desc, ".jpeg")
-  ggsave(pl, file=filename, device = "jpeg", units= "in", height = 15, width = 20)
+  ggsave(plot, file=filename, device = "jpeg", units= "in", height = 15, width = 20)
 }
 
 #For all top categories at once:
