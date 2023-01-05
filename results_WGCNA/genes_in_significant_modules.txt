@@ -25,3 +25,12 @@ Module skyblue: 416
 Module coral: 38
 Module indianred3: 25
 Module lightcoral: 54
+Module brown: 1609
+Module firebrick4: 54
+Module skyblue4: 250
+Module mediumpurple2: 56
+Module saddlebrown: 188
+Module skyblue: 416
+Module coral: 38
+Module indianred3: 25
+Module lightcoral: 54

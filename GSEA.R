@@ -13,8 +13,8 @@ suppressPackageStartupMessages({
 
 #Parameters
 #Which database inside msigdbr?
-category <- 'H'
-subcategory <- NULL
+category <- 'C5'
+subcategory <- 'GO:BP'
 #msigdbr_collections()
 #Will you use stat parameter for ordering or the shrinked log2fold change?
 #Log2fold is traditional statistic, but lately t statistic has been more recommended
@@ -52,7 +52,7 @@ gseaplotsF <- paste0(resD,'all_gseaplots.jpeg')
 load(input)
 
 if(statP){
-  res <- results(dds)
+  res <- results(dds, contrast = c('condition', 'Affected', 'Unaffected'))
   res <- res[complete.cases(res),]
   dat <- res$stat
   names(dat) <- as.character(rownames(res))

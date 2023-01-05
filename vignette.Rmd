@@ -946,8 +946,21 @@ plot](results_GSEA/GO_BP/all_gseaplots.jpeg)
 
 # Weighted Gene Coexpression Network Analysis
 
-The Weighted Gene Coexpression Network Analysis (WGCNA) is...
-[@langfelder2008]I have divided the scripts in five parts for simplicity
+## Introduction
+
+The Weighted Gene Coexpression Network Analysis (WGCNA) is a systems biology method that enables to build a gene network based on the correlation of their expression profiles and link this expression profiles to a trait, that can be continuous or categorical [@langfelder2008]. It has mu
+Important terms that have to been known previously the advance in this analysis are listed here:
+- Scale free network:
+- Soft or hard threshold:
+- Signed or unsigned network:
+- Module:
+- Module eigengene:
+- Gene significance: the correlation of gene expression profile with an external trait y. This measure is related to the correlation between the module eigengene and the trait. Module significance is the average absolute gene significance measure for all genes in a given module.
+- Module membership:  association between gene expression and each module eigengene.
+
+An interesting application of a coexpression network is intramodular analysis, thus, what happens inside each significant module. It is possible to calculate the hub genes and the correlation between module membership and gene significance. When there is a positive correlation between these features, genes that are highly significantly associated with the trait (high gene significance) are also the genes that are the most connected within their module (high module membership) https://fuzzyatelin.github.io/bioanth-stats/module-F21-Group1/module-F21-Group1.html . 
+
+I have divided the scripts in five parts for simplicity
 reasons. They are based on the WGCNA tutorials made by Peter Langfelder
 and Steve Horvarth [@langfelderhorvarth2008].
 

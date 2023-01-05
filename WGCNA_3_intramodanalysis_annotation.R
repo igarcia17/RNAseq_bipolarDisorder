@@ -137,7 +137,7 @@ for (mod in sigMods){
   invisible(dev.off())
 }
 
-#D) Summary output
+#D) Summary output: save interesnting results for later analysis
 genes <- names(datExpr)
 symbol <- mapIds(org.Hs.eg.db, keys = genes, column = 'SYMBOL', 
                  keytype = 'ENSEMBL', multiVals = 'first')
