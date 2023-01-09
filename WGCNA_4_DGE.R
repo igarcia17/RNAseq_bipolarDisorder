@@ -101,9 +101,9 @@ for (mod in sigMods){
   modGenes <- rownames(geneInfo)[geneInfo$moduleColor == mod]
   nMod <- length(modGenes)
   overlap <- sum(modGenes %in% DEGs)
-  hyp <- phyper(overlap - 1, nMod, nGenes-nDEGS, nDEGS, lower.tail= FALSE)
+  hyp <- phyper(overlap - 1, nMod, nGenes-nMod, nDEGS, lower.tail= FALSE)
   message <- paste0('For module ', mod, ' the p value of hypergeometric test is ', hyp, 
-                    'It has ', nMod, ' genes and ', overlap, ' are in DEGs')
+                    '. It has ', nMod, ' genes and ', overlap, ' are in DEGs')
   print(message)
 }
 
