@@ -95,7 +95,17 @@ ggplot(DEGmods_summary, aes(x="", y=perc, fill=WGCNA_module)) +
 invisible(dev.off())
 
 #Hypergeometric test:
-
 nDEGS <- length(DEGs)
+nGenes <- nrow(geneInfo)
+for (mod in sigMods){
+  modGenes <- rownames(geneInfo)[geneInfo$moduleColor == mod]
+  nMod <- length(modGenes)
+  overlap <- sum(modGenes %in% DEGs)
+  hyp <- phyper(overlap - 1, nMod, nGenes-nDEGS, nDEGS, lower.tail= FALSE)
+  message <- paste0('For module ', mod, ' the p value of hypergeometric test is ', hyp, 
+                    'It has ', nMod, ' genes and ', overlap, ' are in DEGs')
+  print(message)
+}
 
-phyper(Overlap-1, group2, Total-group2, group1,lower.tail= FALSE)
+
+
