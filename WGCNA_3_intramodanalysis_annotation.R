@@ -57,7 +57,7 @@ colnames(sampleTable)[1] <- 'is.Female'
 levels(sampleTable$age) <- c(1,2,0)
 levels(sampleTable)[2] <- 'age_stage'
 #Probar añadiendo una columna con las edades reales
-
+sampleTable <- sampleTable$is.Affected
 #Calculate correlations and p values taking into account # observations
 moduleTrait <- corAndPvalue(MEs, sampleTable)
 moduleTraitCor <- moduleTrait$cor
@@ -69,11 +69,11 @@ textMatrix <- paste(signif(moduleTraitCor, 2), "\n(",
 dim(textMatrix) <- dim(moduleTraitCor) #give shape
 
 #Graphical representation:
-jpeg(file = modtraitF, width = 700, height = 1600, quality = 100)
+jpeg(file = modtraitF, width = 300, height = 1600, quality = 100)
 par(mar = c(6, 8.5, 3, 3))
 title <- "Module-trait relationships"
 labeledHeatmap(Matrix = moduleTraitCor,
-               xLabels = names(sampleTable),
+               xLabels = 'is.Affected',
                yLabels = names(MEs),
                ySymbols = names(MEs),
                colorLabels = FALSE, colors = blueWhiteRed(50),
